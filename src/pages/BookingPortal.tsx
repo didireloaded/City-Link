@@ -102,18 +102,36 @@ export const BookingPortal = () => {
           </section>
         )}
 
-        {/* Popular Express Corridors */}
+        {/* Popular Express Corridors with Coach Photos */}
         <section className="space-y-3">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground px-1">
-            Popular Express Corridors
+            Popular Express Corridors & Coach Class
           </h3>
           <div className="space-y-3">
-            {POPULAR_ROUTES.map((route) => (
+            {POPULAR_ROUTES.map((route, idx) => (
               <div
                 key={`${route.from}-${route.to}`}
                 onClick={() => quickSearch(route.from, route.to)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent active:scale-[0.99]"
+                className="group relative cursor-pointer overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent active:scale-[0.99]"
               >
+                {/* Coach Preview Banner */}
+                <div className="relative mb-3 h-32 w-full overflow-hidden rounded-2xl bg-secondary">
+                  <img
+                    src={heroBus}
+                    alt="CityLink Luxury Sleeper Coach"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white">
+                    <span className="rounded-full bg-accent/90 px-2.5 py-0.5 text-[10px] font-extrabold text-accent-foreground shadow-sm">
+                      {idx === 0 ? "Platinum Marcopolo G8" : idx === 1 ? "Scania Sleeper Cruiser" : "Executive 2+1 Coach"}
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] font-extrabold text-white/90">
+                      <Sparkles className="h-3 w-3 text-accent" /> 49 Sleeper Recliners
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
@@ -129,7 +147,7 @@ export const BookingPortal = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-muted-foreground">From</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">One-Way</p>
                     <p className="text-lg font-extrabold text-primary">N${route.price}</p>
                   </div>
                 </div>
@@ -139,31 +157,12 @@ export const BookingPortal = () => {
                     <CheckCircle2 className="h-3.5 w-3.5" /> 20kg Checked Luggage Included
                   </span>
                   <span className="flex items-center gap-1 text-accent">
-                    <span>Select Journey</span>
+                    <span>Select Seats</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </span>
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* CityLink Booking Policies Info Box */}
-        <section className="rounded-3xl border border-border bg-secondary/40 p-5 space-y-3 text-xs">
-          <div className="flex items-center gap-2 font-extrabold text-primary text-sm">
-            <ShieldCheck className="h-5 w-5 text-accent" />
-            <span>Why Book via CityLink App?</span>
-          </div>
-          <div className="space-y-2 font-semibold text-muted-foreground leading-relaxed">
-            <p>
-              • <strong className="text-foreground font-extrabold">Price Guarantee & No Hidden Fees:</strong> Every fare shown includes taxes, checked luggage, and standard booking service.
-            </p>
-            <p>
-              • <strong className="text-foreground font-extrabold">100% Flexible Policy:</strong> Reschedule travel dates for free or cancel for instant store credit up to 6 hours before departure.
-            </p>
-            <p>
-              • <strong className="text-foreground font-extrabold">Instant Offline Boarding Pass:</strong> QR e-tickets are stored on your device and accessible even in low-signal areas.
-            </p>
           </div>
         </section>
       </main>
