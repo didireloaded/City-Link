@@ -14,9 +14,6 @@ import Track from "./pages/Track.tsx";
 import Trips from "./pages/Trips.tsx";
 import Profile from "./pages/Profile.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
-import RouteMap from "./pages/RouteMap.tsx";
-import Lounge from "./pages/Lounge.tsx";
-import Support from "./pages/Support.tsx";
 import { BottomNav } from "./components/BottomNav.tsx";
 
 const queryClient = new QueryClient();
@@ -39,9 +36,6 @@ const App = () => (
           <Route path="/tickets" element={<Trips />} />
           <Route path="/trips" element={<Trips />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/route-map" element={<RouteMap />} />
-          <Route path="/lounge" element={<Lounge />} />
-          <Route path="/support" element={<Support />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomNav />
