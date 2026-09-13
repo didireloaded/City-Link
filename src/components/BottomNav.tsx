@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Bus, Home, Package, Ticket, User, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, CarTaxiFront, Home, MapPinned, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const BottomNav = () => {
@@ -16,25 +16,25 @@ export const BottomNav = () => {
       <div className="mx-auto max-w-md px-3 pb-3 pointer-events-auto">
         <div className="relative flex h-[74px] items-center justify-between rounded-[28px] border border-white/15 bg-[#0a192f]/90 px-3 backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.4)]">
           <SideTab to="/" label="Home" icon={<Home className="h-5 w-5" />} active={pathname === "/"} />
-          <SideTab to="/tickets" label="Tickets" icon={<Ticket className="h-5 w-5" />} active={is("/tickets") || is("/trips")} />
+          <SideTab to="/tickets" label="Transfers" icon={<MapPinned className="h-5 w-5" />} active={is("/tickets") || is("/trips")} />
           
           <Link
             to="/book"
-            aria-label="Book a coach"
+            aria-label="Book a transfer"
             className={cn(
               "absolute left-1/2 top-[-24px] flex h-[70px] w-[70px] -translate-x-1/2 flex-col items-center justify-center rounded-full transition-all active:scale-95",
-              "bg-gradient-to-tr from-accent via-accent to-[#f3bc58] text-accent-foreground shadow-[0_8px_25px_rgba(212,160,23,0.6)] ring-4 ring-[#0a192f]",
+              "bg-gradient-to-tr from-accent via-accent to-[#8fd8ff] text-accent-foreground shadow-[0_8px_25px_rgba(94, 197, 239,0.6)] ring-4 ring-[#0a192f]",
               isBook && "scale-105 ring-8 ring-accent/20"
             )}
           >
-            <Bus className="h-6 w-6 stroke-[2.5]" />
+            <CarTaxiFront className="h-6 w-6 stroke-[2.5]" />
             <span className="mt-0.5 text-[10px] font-extrabold uppercase tracking-wider">Book</span>
           </Link>
 
           <div className="w-[72px] shrink-0" />
           
-          <SideTab to="/parcels" label="Parcels" icon={<Package className="h-5 w-5" />} active={is("/parcels") || is("/parcel") || is("/track")} />
-          <SideTab to="/profile" label="VIP Profile" icon={<User className="h-5 w-5" />} active={is("/profile")} />
+          <SideTab to="/parcels" label="Services" icon={<BriefcaseBusiness className="h-5 w-5" />} active={is("/parcels") || is("/parcel") || is("/track")} />
+          <SideTab to="/profile" label="Profile" icon={<User className="h-5 w-5" />} active={is("/profile")} />
         </div>
       </div>
     </nav>
@@ -50,7 +50,7 @@ const SideTab = ({ to, label, icon, active }: { to: string; label: string; icon:
     )}
   >
     {active && (
-      <span className="absolute top-2.5 h-1 w-5 rounded-full bg-accent shadow-[0_0_10px_rgba(212,160,23,0.8)]" />
+      <span className="absolute top-2.5 h-1 w-5 rounded-full bg-accent shadow-[0_0_10px_rgba(94, 197, 239,0.8)]" />
     )}
     <div className={cn("transition-transform", active && "scale-110")}>{icon}</div>
     <span className="tracking-tight">{label}</span>

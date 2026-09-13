@@ -217,7 +217,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             )}
             {pushStep === 2 && (
               <div className="rounded-xl border border-success/40 bg-success/15 p-3 text-center text-xs font-extrabold text-success flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Push Approved successfully! Completing ticket...
+                <CheckCircle2 className="h-4 w-4" /> Push Approved successfully! Completing transfer...
               </div>
             )}
           </div>
@@ -228,7 +228,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-3 animate-fade-up">
             <div className="flex items-center justify-between border-b border-border pb-2.5">
               <div>
-                <h4 className="text-xs font-extrabold text-primary">City-Link Transport (Pty) Ltd</h4>
+                <h4 className="text-xs font-extrabold text-primary">JS City Cab cc T/A City Cab Transfers</h4>
                 <p className="text-[10px] font-semibold text-muted-foreground">Bank Windhoek · Main Branch</p>
               </div>
               <span className="rounded-lg bg-secondary px-2 py-1 font-mono text-[11px] font-extrabold text-primary">
@@ -291,7 +291,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-3.5 animate-fade-up">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-primary flex items-center gap-1.5">
-                <Wallet className="h-4 w-4 text-accent" /> City-Link Credit Wallet
+                <Wallet className="h-4 w-4 text-accent" /> City Cab Wallet
               </span>
               <span className="text-[10px] font-bold text-success">Instant Settlement</span>
             </div>
@@ -367,10 +367,10 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
               <span className="text-[10px] font-bold text-accent">Pay on Arrival</span>
             </div>
             <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
-              Your ticket reservation or parcel dispatch will be locked instantly. Simply pay cash <span className="font-bold text-primary">(N${amountNAD})</span> at our Bahnhof Street Windhoek desk or Oshakati Terminal prior to boarding or parcel collection.
+              Your transfer booking will be locked instantly. Simply pay cash <span className="font-bold text-primary">(N${amountNAD})</span> at our 17 Hahnemann Street office before pickup if required.
             </p>
             <div className="rounded-xl border border-success/30 bg-success/10 p-2.5 text-[11px] font-extrabold text-success flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0" /> Seat / Waybill reserved without upfront card payment.
+              <CheckCircle2 className="h-4 w-4 shrink-0" /> Transfer reserved without upfront card payment.
             </div>
           </div>
         )}

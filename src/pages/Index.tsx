@@ -1,295 +1,155 @@
 import { Link, useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  Bell,
-  Bus,
-  CalendarClock,
-  MapPin,
-  Package,
-  ShieldCheck,
-  Snowflake,
-  Star,
-  Ticket,
-  Wifi,
-  Zap,
-  Navigation,
-  Coffee,
-  HelpCircle,
-  Sparkles,
-  Compass,
-  CheckCircle2,
-  Clock,
-} from "lucide-react";
+import { Bell, CarTaxiFront, MapPin, Search, SlidersHorizontal, Star } from "lucide-react";
 import { Logo } from "@/components/Brand";
 import { loadProfile } from "@/lib/profile";
-import { MapBackground } from "@/components/MapBackground";
-import heroBus from "@/assets/hero-bus.jpg";
+import { VEHICLE_CATEGORIES } from "@/data/trips";
 
-const QUICK_SERVICES = [
-  {
-    title: "Book Coach Seats",
-    desc: "Luxury 49-seat sleeper fleet across Namibia",
-    icon: Bus,
-    to: "/book",
-    badge: "Instant Issue",
-    primary: true,
-  },
-  {
-    title: "Parcel Logistics",
-    desc: "Fast city-to-city waybills & live GPS tracking",
-    icon: Package,
-    to: "/parcels",
-    badge: "Same-Day",
-  },
-  {
-    title: "VIP Lounge Pass",
-    desc: "Free Wi-Fi, coffee bar & shower suites",
-    icon: Coffee,
-    to: "/lounge",
-    badge: "Exclusive",
-  },
-  {
-    title: "Live GPS Map",
-    desc: "Explore corridor terminals & live pricing",
-    icon: Compass,
-    to: "/route-map",
-    badge: "Active GPS",
-  },
-];
+const SERVICES = ["All", "Airport", "City", "Lodge", "Safari"];
 
-const DESTINATIONS = [
-  {
-    name: "Oshakati & North",
-    subtitle: "Daily Morning & Evening Express Runs",
-    price: "350",
-    from: "Windhoek",
-    to: "Oshakati",
-    tag: "Most Popular",
-  },
-  {
-    name: "Swakopmund Coast",
-    subtitle: "Non-stop Luxury Weekend Runs",
-    price: "320",
-    from: "Windhoek",
-    to: "Swakopmund",
-    tag: "Coastal Run",
-  },
-  {
-    name: "Walvis Bay Terminal",
-    subtitle: "Direct Corridor connection from capital",
-    price: "330",
-    from: "Windhoek",
-    to: "Walvis Bay",
-    tag: "Direct Run",
-  },
-  {
-    name: "Windhoek Capital",
-    subtitle: "Return sleeper journeys from all northern towns",
-    price: "350",
-    from: "Oshakati",
+const SERVICE_ROUTES: Record<string, { from: string; to: string; pickup: string; dropoff: string }> = {
+  All: {
+    from: "Hosea Kutako International Airport",
     to: "Windhoek",
-    tag: "Capital Hub",
+    pickup: "Arrivals Hall Meet & Greet",
+    dropoff: "Hotel pickup",
   },
-];
+  Airport: {
+    from: "Hosea Kutako International Airport",
+    to: "Windhoek",
+    pickup: "Arrivals Hall Meet & Greet",
+    dropoff: "Hotel pickup",
+  },
+  City: {
+    from: "Windhoek",
+    to: "Windhoek West",
+    pickup: "Hotel pickup",
+    dropoff: "17 Hahnemann Street, Windhoek West",
+  },
+  Lodge: {
+    from: "Windhoek",
+    to: "Sossusvlei",
+    pickup: "Hotel pickup",
+    dropoff: "Lodge pickup",
+  },
+  Safari: {
+    from: "Windhoek",
+    to: "Etosha National Park",
+    pickup: "Hotel pickup",
+    dropoff: "Lodge pickup",
+  },
+};
 
 export const Index = () => {
   const navigate = useNavigate();
   const profile = loadProfile();
   const today = new Date().toISOString().slice(0, 10);
   const firstName = profile.name && profile.name !== "Guest user" ? profile.name.split(" ")[0] : "Traveler";
+  const homeFleet = VEHICLE_CATEGORIES.filter((vehicle) => ["sedan", "compact-suv", "suv"].includes(vehicle.id));
 
-  const quickSearch = (from: string, to: string) => {
-    navigate(`/results?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${today}&passengers=1&tripType=one-way`);
+  const openResults = (service = "Airport") => {
+    const route = SERVICE_ROUTES[service] || SERVICE_ROUTES.Airport;
+    navigate(
+      `/results?service=${encodeURIComponent(service)}&from=${encodeURIComponent(route.from)}&to=${encodeURIComponent(
+        route.to
+      )}&date=${today}&pickupTime=14:30&passengers=1&pickup=${encodeURIComponent(route.pickup)}&dropoff=${encodeURIComponent(route.dropoff)}`
+    );
   };
 
   return (
     <div className="safe-page bg-background pb-32">
-      {/* Top Header with Interactive Map Background & Premium Welcome */}
-      <header className="relative overflow-hidden bg-gradient-to-b from-[#0a192f] via-primary to-background pt-6 pb-14 text-white shadow-md">
-        {/* Subtle Faded GPS Map Background */}
-        <MapBackground />
+      <main className="mx-auto max-w-md px-5 pt-6">
+        <header className="flex items-center justify-between">
+          <Logo />
+          <Link
+            to="/profile"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card text-primary shadow-sm ring-1 ring-border"
+            aria-label="Open profile"
+          >
+            <Bell className="h-5 w-5" />
+          </Link>
+        </header>
 
-        <div className="relative z-10 mx-auto max-w-md px-5">
-          <div className="mb-6 flex items-center justify-between">
-            <Logo />
-            <div className="flex items-center gap-2">
-              <Link
-                to="/route-map"
-                className="flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-xs font-extrabold text-white backdrop-blur-md hover:bg-white/25 transition-colors border border-white/15"
-              >
-                <Compass className="h-3.5 w-3.5 text-accent animate-spin" style={{ animationDuration: "10s" }} />
-                <span>Live Map</span>
-              </Link>
-              <Link
-                to="/profile"
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/12 text-white backdrop-blur-md shadow-sm hover:bg-white/25 border border-white/15"
-              >
-                <Bell className="h-4 w-4" />
-              </Link>
-            </div>
+        <section className="mt-8">
+          <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+            <MapPin className="h-4 w-4 text-accent" />
+            <span>Windhoek</span>
           </div>
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight text-primary">Hello {firstName}!</h1>
+          <p className="mt-2 text-sm font-semibold text-muted-foreground">Book a private City Cab transfer.</p>
 
-          <div className="max-w-[340px] animate-fade-up">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/25 border border-accent/40 px-3 py-1 text-xs font-extrabold text-accent mb-2.5 backdrop-blur-md">
-              <Sparkles className="h-3.5 w-3.5" /> Luxury Coach & Logistics App
-            </div>
-            <p className="text-sm font-extrabold text-white/80">Welcome back, {firstName}</p>
-            <h1 className="mt-1 text-3xl font-extrabold leading-[1.15] text-white">
-              First-Class Travel Across Namibia
-            </h1>
-            <p className="mt-2 text-xs font-semibold text-white/75 leading-relaxed">
-              Explore non-stop VIP journeys and real-time parcel logistics right from your device.
-            </p>
-          </div>
-
-          {/* Active Corridor Status Banner */}
-          <div className="mt-6 rounded-2xl border border-white/20 bg-black/35 p-3.5 backdrop-blur-lg shadow-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground font-extrabold">
-                  <MapPin className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-success ring-2 ring-primary animate-ping" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-accent">GPS Corridor Status</p>
-                  <p className="text-xs font-extrabold text-white">Northern & Coastal Routes Active</p>
-                  <p className="text-[10px] font-semibold text-white/70">On-time departure timetables ready</p>
-                </div>
-              </div>
-              <Link
-                to="/book"
-                className="rounded-xl bg-accent px-4 py-2 text-xs font-extrabold text-accent-foreground shadow-[var(--shadow-glow)] active:scale-95 transition-transform shrink-0"
-              >
-                Book Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto max-w-md px-4 -mt-4 space-y-6">
-        {/* Active Journey Callout Card (If Passenger has Ticket) */}
-        <div className="rounded-3xl border border-accent/40 bg-gradient-to-r from-primary via-primary/95 to-secondary p-5 text-white shadow-[var(--shadow-elegant)] animate-fade-up">
-          <div className="flex items-center justify-between border-b border-white/15 pb-3">
-            <span className="flex items-center gap-1.5 text-xs font-extrabold text-accent uppercase tracking-wider">
-              <Clock className="h-3.5 w-3.5 animate-pulse" /> Next Departure Ready
+          <button
+            onClick={() => openResults("Airport")}
+            className="mt-6 flex h-20 w-full items-center justify-between rounded-[28px] bg-card px-5 text-left shadow-sm ring-1 ring-border transition active:scale-[0.99]"
+          >
+            <span className="flex items-center gap-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-primary">
+                <Search className="h-5 w-5" />
+              </span>
+              <span>
+                <span className="block text-base font-extrabold text-primary">Where to?</span>
+                <span className="block text-xs font-semibold text-muted-foreground">Airport, city or lodge transfer</span>
+              </span>
             </span>
-            <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[10px] font-extrabold text-success">
-              Confirmed
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-primary">
+              <SlidersHorizontal className="h-5 w-5" />
             </span>
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold text-white/70">Windhoek Terminal ⇄ Northern Hub</p>
-              <h3 className="text-lg font-extrabold text-white">Daily Sleeper Express</h3>
-              <p className="text-xs font-semibold text-accent mt-0.5">Boarding passes available instantly offline</p>
-            </div>
-            <Link
-              to="/tickets"
-              className="flex h-11 items-center justify-center rounded-xl bg-accent px-4 text-xs font-extrabold text-accent-foreground shadow-sm active:scale-95 transition-transform"
-            >
-              My Tickets
-            </Link>
-          </div>
-        </div>
-
-        {/* Primary Bento Service Launcher */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-              CityLink Services
-            </h2>
-            <Link to="/book" className="text-[11px] font-extrabold text-accent hover:underline flex items-center gap-1">
-              <span>View All Timetables</span>
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {QUICK_SERVICES.map((srv) => {
-              const Icon = srv.icon;
-              return (
-                <Link
-                  key={srv.title}
-                  to={srv.to}
-                  className={`group relative overflow-hidden rounded-3xl border p-4 transition-all active:scale-[0.98] ${
-                    srv.primary
-                      ? "border-accent bg-accent text-accent-foreground shadow-[var(--shadow-glow)] col-span-2 sm:col-span-1"
-                      : "border-border bg-card text-primary shadow-sm hover:border-accent/50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                        srv.primary ? "bg-white/20 text-white" : "bg-secondary text-accent"
-                      }`}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                        srv.primary ? "bg-white/25 text-white" : "bg-accent/15 text-accent"
-                      }`}
-                    >
-                      {srv.badge}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-base font-extrabold leading-tight">{srv.title}</h3>
-                  <p
-                    className={`mt-1 text-xs font-semibold leading-relaxed ${
-                      srv.primary ? "text-white/80" : "text-muted-foreground"
-                    }`}
-                  >
-                    {srv.desc}
-                  </p>
-                </Link>
-              );
-            })}
-          </div>
+          </button>
         </section>
 
-        {/* Explore & Instant Book Destinations Grid */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-              Explore Popular Routes
-            </h2>
-            <span className="text-[11px] font-bold text-muted-foreground">Tap to book instantly</span>
-          </div>
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+          {SERVICES.map((service, index) => (
+            <button
+              key={service}
+              onClick={() => openResults(service)}
+              className={`h-12 min-w-[92px] rounded-2xl px-5 text-sm font-extrabold transition active:scale-95 ${
+                index === 0 ? "bg-accent text-accent-foreground shadow-[var(--shadow-glow)]" : "bg-card text-muted-foreground ring-1 ring-border"
+              }`}
+            >
+              {service}
+            </button>
+          ))}
+        </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {DESTINATIONS.map((dest) => (
-              <div
-                key={dest.name}
-                onClick={() => quickSearch(dest.from, dest.to)}
-                className="group relative cursor-pointer overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent active:scale-[0.99]"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="inline-block rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-extrabold text-muted-foreground mb-1.5">
-                      {dest.tag}
-                    </span>
-                    <h3 className="text-base font-extrabold text-primary">{dest.name}</h3>
-                    <p className="text-xs font-semibold text-muted-foreground">{dest.subtitle}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">One-Way</p>
-                    <p className="text-lg font-extrabold text-accent">N${dest.price}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs font-extrabold text-primary">
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 text-accent" /> {dest.from} → {dest.to}
-                  </span>
-                  <span className="flex items-center gap-1 text-accent group-hover:translate-x-1 transition-transform">
-                    <span>Book Route</span>
-                    <ArrowRight className="h-4 w-4" />
+        <section className="mt-4 grid grid-cols-2 gap-3">
+          {homeFleet.map((vehicle, index) => (
+            <button
+              key={vehicle.id}
+              onClick={() => openResults(index === 2 ? "Safari" : "Airport")}
+              className={`group overflow-hidden rounded-[26px] text-left shadow-sm ring-1 ring-border transition active:scale-[0.99] ${
+                index === 0 ? "col-span-2 bg-accent text-accent-foreground" : "bg-card text-primary"
+              }`}
+            >
+              <div className={`${index === 0 ? "h-56" : "h-36"} relative overflow-hidden bg-gradient-to-b from-white to-secondary`}>
+                <div className="absolute inset-x-8 bottom-8 h-8 rounded-full bg-primary/15 blur-xl" />
+                <img
+                  src={vehicle.imageUrl}
+                  alt={`${vehicle.model} vehicle`}
+                  className={`absolute left-1/2 object-contain drop-shadow-2xl transition duration-500 group-hover:scale-[1.5] ${
+                    index === 0
+                      ? "top-16 h-32 w-[120%] -translate-x-1/2 scale-[1.4]"
+                      : "top-11 h-20 w-[145%] -translate-x-1/2 scale-[1.45]"
+                  }`}
+                />
+                <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-xs font-extrabold text-primary shadow-sm">
+                  <Star className="h-3.5 w-3.5 fill-accent text-accent" />
+                  {vehicle.rating}
+                </span>
+              </div>
+              <div className={index === 0 ? "p-5" : "p-4"}>
+                <p className="text-[10px] font-extrabold uppercase text-primary/55">City Cab Fleet</p>
+                <h2 className={index === 0 ? "mt-1 text-3xl font-extrabold text-primary" : "mt-1 text-xl font-extrabold text-primary"}>
+                  {vehicle.name}
+                </h2>
+                <p className="mt-1 text-xs font-bold text-muted-foreground">{vehicle.model}</p>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-lg font-extrabold text-primary">N${vehicle.airportWindhoekRate}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <CarTaxiFront className="h-4 w-4" />
                   </span>
                 </div>
               </div>
-            ))}
-          </div>
+            </button>
+          ))}
         </section>
       </main>
     </div>

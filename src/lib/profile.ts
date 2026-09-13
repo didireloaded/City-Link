@@ -22,7 +22,7 @@ export interface Profile {
   };
 }
 
-const KEY = "citylink_profile";
+const KEY = "citycab_profile";
 
 export const defaultProfile: Profile = {
   name: "Tangeni Shilongo",
@@ -30,7 +30,7 @@ export const defaultProfile: Profile = {
   email: "tangeni.s@na.network",
   walletBalanceNAD: 150,
   loyaltyPoints: 420,
-  referralCode: "CITYLINK-TANGENI81",
+  referralCode: "CITYCAB-TANGENI81",
   referralsCount: 3,
   savedPassengers: [
     { id: "sp-1", name: "Tangeni Shilongo (Self)", phone: "+264 81 234 5678", relation: "Self", idNumber: "94051200381" },
@@ -38,9 +38,9 @@ export const defaultProfile: Profile = {
     { id: "sp-3", name: "Johanna Shilongo (Mother)", phone: "+264 81 333 1188", relation: "Parent", idNumber: "65010100881" },
   ],
   savedRoutes: [
-    { from: "Windhoek", to: "Oshakati" },
-    { from: "Windhoek", to: "Walvis Bay" },
-    { from: "Ondangwa", to: "Windhoek" },
+    { from: "Home", to: "Hosea Kutako International Airport" },
+    { from: "Windhoek", to: "Swakopmund" },
+    { from: "Windhoek", to: "Etosha National Park" },
   ],
   preferences: { notifications: true, promoEmails: false, language: "en", smsReminders: true },
 };
