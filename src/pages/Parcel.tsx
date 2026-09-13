@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { serviceSearch } from "@/lib/transfer-service";
 import { SERVICES, CITY_LINK_INFO } from "@/data/trips";
 import { ArrowRight, BriefcaseBusiness, CarTaxiFront, MessageCircle, Phone, Plane, User } from "lucide-react";
 
@@ -25,12 +26,12 @@ const Parcel = () => {
           </p>
         </section>
 
-        <section className="mt-5 space-y-3">
+        <section className="mt-5 grid grid-cols-2 gap-3">
           {SERVICES.map((service, index) => {
             const Icon = serviceIcons[index] || CarTaxiFront;
             return (
               <article key={service.title} className="rounded-2xl border border-border bg-card p-4 shadow-sm animate-fade-up">
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
                     <Icon className="h-5 w-5" />
                   </div>
@@ -39,8 +40,8 @@ const Parcel = () => {
                     <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">{service.desc}</p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Link to="/book" className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-accent text-xs font-extrabold text-accent-foreground">
+                <div className="mt-4 grid gap-2">
+                  <Link to={`/book?${serviceSearch(service.title.split(" ")[0])}`} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-accent text-xs font-extrabold text-accent-foreground">
                     Book Transfer <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <a href={`https://wa.me/${CITY_LINK_INFO.contact.whatsapp}`} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-success/15 text-xs font-extrabold text-success">

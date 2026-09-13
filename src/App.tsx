@@ -7,14 +7,9 @@ import Index from "./pages/Index.tsx";
 import BookingPortal from "./pages/BookingPortal.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Results from "./pages/Results.tsx";
-import Booking from "./pages/Booking.tsx";
 import Confirmation from "./pages/Confirmation.tsx";
-import Parcel from "./pages/Parcel.tsx";
-import Track from "./pages/Track.tsx";
 import Trips from "./pages/Trips.tsx";
 import Profile from "./pages/Profile.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import { BottomNav } from "./components/BottomNav.tsx";
 
 const queryClient = new QueryClient();
 
@@ -28,17 +23,11 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/book" element={<BookingPortal />} />
           <Route path="/results" element={<Results />} />
-          <Route path="/book/:tripId" element={<Booking />} />
           <Route path="/confirmation" element={<Confirmation />} />
-          <Route path="/parcels" element={<Parcel />} />
-          <Route path="/parcel" element={<Parcel />} />
-          <Route path="/track" element={<Track />} />
-          <Route path="/tickets" element={<Trips />} />
           <Route path="/trips" element={<Trips />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <BottomNav />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
