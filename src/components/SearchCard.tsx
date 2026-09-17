@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { inferService } from "@/lib/transfer-service";
+import { useNavigate } from "react-router-dom";
 import { PICKUP_POINTS, ROUTES } from "@/data/trips";
 import { ArrowLeftRight, ArrowRight, Calendar, Luggage, MapPin, Plane, Sparkles, Tag } from "lucide-react";
 
 export const SearchCard = ({ compact = false }: { compact?: boolean }) => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
 
-  const [from, setFrom] = useState(searchParams.get("from") || "Hosea Kutako International Airport");
-  const [to, setTo] = useState(searchParams.get("to") || "Windhoek");
+  const [from, setFrom] = useState("Hosea Kutako International Airport");
+  const [to, setTo] = useState("Windhoek");
   const [pickup, setPickup] = useState(PICKUP_POINTS["Hosea Kutako International Airport"]?.[0] || "Arrivals Hall Meet & Greet");
   const [dropoff, setDropoff] = useState(PICKUP_POINTS.Windhoek?.[0] || "Hotel pickup");
   const [date, setDate] = useState(today);
@@ -35,7 +33,6 @@ export const SearchCard = ({ compact = false }: { compact?: boolean }) => {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams({
-      service: ["Executive", "Staff"].includes(searchParams.get("service") || "") ? searchParams.get("service")! : inferService(from, to),
       from,
       to,
       date,
