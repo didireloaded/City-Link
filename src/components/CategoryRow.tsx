@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { 
   Plane, 
   Building2, 
@@ -8,8 +8,7 @@ import {
   Bus, 
   SlidersHorizontal, 
   ChevronLeft, 
-  ChevronRight,
-  Sparkles
+  ChevronRight
 } from "lucide-react";
 
 interface CategoryRowProps {
@@ -27,49 +26,49 @@ export const CategoryRow = ({
     {
       id: "Airport",
       title: "Airport Transfer",
-      subtitle: "Hosea Kutako · 24/7 Meet & Greet",
+      count: "316 Activities",
       badge: "Top rated",
-      badgeColor: "bg-amber-100 text-amber-900 border-amber-200",
+      badgeColor: "bg-red-50 text-red-700 border-red-100",
       icon: Plane,
     },
     {
       id: "City",
       title: "City Ride",
-      subtitle: "Windhoek point-to-point transfers",
-      badge: "Popular",
-      badgeColor: "bg-rose-100 text-rose-900 border-rose-200",
+      count: "196 Activities",
+      badge: "Trending",
+      badgeColor: "bg-amber-50 text-amber-700 border-amber-100",
       icon: Building2,
     },
     {
       id: "Lodge",
       title: "Lodge Transfer",
-      subtitle: "Scenic desert & wilderness lodges",
+      count: "248 Activities",
       badge: "Guest favorite",
-      badgeColor: "bg-emerald-100 text-emerald-900 border-emerald-200",
+      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-100",
       icon: Compass,
     },
     {
       id: "Safari",
       title: "Safari & Tours",
-      subtitle: "Etosha, Sossusvlei & National Parks",
+      count: "74 Activities",
       badge: "Top rated",
-      badgeColor: "bg-amber-100 text-amber-900 border-amber-200",
+      badgeColor: "bg-red-50 text-red-700 border-red-100",
       icon: Car,
     },
     {
       id: "Executive",
       title: "Executive VIP",
-      subtitle: "Fortuner & Mercedes chauffeur",
+      count: "126 Activities",
       badge: "Trending",
-      badgeColor: "bg-purple-100 text-purple-900 border-purple-200",
+      badgeColor: "bg-amber-50 text-amber-700 border-amber-100",
       icon: Crown,
     },
     {
       id: "Staff",
       title: "Staff Transport",
-      subtitle: "Scheduled workforce & team transit",
+      count: "294 Activities",
       badge: "Corporate",
-      badgeColor: "bg-sky-100 text-sky-900 border-sky-200",
+      badgeColor: "bg-sky-50 text-sky-700 border-sky-100",
       icon: Bus,
     },
   ];
@@ -82,52 +81,51 @@ export const CategoryRow = ({
   };
 
   return (
-    <section className="w-full pt-10 md:pt-14 pb-8 px-2 md:px-4">
-      {/* Category Header Row - Matching SkyBound Reference */}
+    <section className="w-full pt-10 md:pt-14 pb-6 px-2 md:px-4">
+      {/* Section Header — matching reference exactly */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
             Select Category
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-500 font-normal mt-1">
-            Find the right transport option for your trip across Namibia
+          <p className="text-sm text-neutral-400 font-normal mt-1">
+            Uncover the Perfect Match in Every Category
           </p>
         </div>
 
-        {/* Right Navigation & Filters matching SkyBound */}
+        {/* Right controls: Filters pill + prev/next arrows */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button 
-            onClick={() => scroll("left")}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-neutral-200 bg-white text-neutral-700 text-xs font-semibold hover:bg-neutral-50 shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-neutral-200 bg-white text-neutral-600 text-xs font-medium hover:bg-neutral-50 transition-colors"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-500" />
+            <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Filters</span>
           </button>
 
-          {/* Left Arrow (white circle) */}
+          {/* Previous arrow — white circle */}
           <button
             onClick={() => scroll("left")}
             aria-label="Previous categories"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 flex items-center justify-center transition-colors shadow-sm"
+            className="w-10 h-10 rounded-full border border-neutral-200 bg-white text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 flex items-center justify-center transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
 
-          {/* Right Arrow (Vibrant Yellow Circle matching SkyBound!) */}
+          {/* Next arrow — yellow circle matching reference */}
           <button
             onClick={() => scroll("right")}
             aria-label="Next categories"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#facc15] hover:bg-amber-400 text-neutral-950 flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-sm font-bold"
+            className="w-10 h-10 rounded-full bg-[#facc15] hover:bg-amber-400 text-neutral-900 flex items-center justify-center transition-all duration-200 hover:scale-105 font-bold"
           >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
       </div>
 
-      {/* Categories Cards Carousel/Grid */}
+      {/* Category Cards — matching reference: icon centered, badge top-right, title + count below */}
       <div
         ref={scrollRef}
-        className="flex items-stretch gap-3 md:gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar scroll-smooth"
+        className="flex items-stretch gap-3 md:gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {categories.map((cat) => {
@@ -139,29 +137,29 @@ export const CategoryRow = ({
               key={cat.id}
               onClick={() => onSelectCategory?.(cat.id)}
               style={{ scrollSnapAlign: "start" }}
-              className={`category-card min-w-[200px] sm:min-w-[220px] md:min-w-[230px] p-5 rounded-[22px] md:rounded-[26px] cursor-pointer flex flex-col justify-between h-[170px] select-none ${
+              className={`category-card relative min-w-[150px] sm:min-w-[170px] md:min-w-[180px] p-5 rounded-[20px] cursor-pointer flex flex-col items-center text-center gap-3 select-none ${
                 isSelected
-                  ? "ring-2 ring-neutral-900 border-neutral-900 bg-neutral-50/50 shadow-md"
-                  : "bg-white border-neutral-200/70"
+                  ? "ring-2 ring-neutral-900 border-neutral-900 bg-neutral-50/50"
+                  : "bg-white"
               }`}
             >
-              {/* Top Row: Icon + Pastel Badge */}
-              <div className="flex items-start justify-between">
-                <div className={`p-2.5 rounded-xl ${isSelected ? "bg-black text-white" : "bg-neutral-100 text-neutral-800"}`}>
-                  <Icon className="w-5 h-5 stroke-[1.8]" />
-                </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cat.badgeColor}`}>
-                  {cat.badge}
-                </span>
+              {/* Badge — top right corner */}
+              <span className={`absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full border ${cat.badgeColor}`}>
+                {cat.badge}
+              </span>
+
+              {/* Icon — centered, line art style */}
+              <div className={`mt-2 p-3 rounded-2xl ${isSelected ? "text-neutral-900" : "text-neutral-600"}`}>
+                <Icon className="w-8 h-8 stroke-[1.2]" />
               </div>
 
-              {/* Bottom Row: Name + Subtitle */}
+              {/* Title + Count */}
               <div>
-                <h3 className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
+                <h3 className="font-bold text-sm text-neutral-900 leading-tight">
                   {cat.title}
                 </h3>
-                <p className="text-[11px] text-neutral-500 font-medium mt-1 leading-snug truncate">
-                  {cat.subtitle}
+                <p className="text-[11px] text-neutral-400 font-medium mt-0.5">
+                  {cat.count}
                 </p>
               </div>
             </div>
