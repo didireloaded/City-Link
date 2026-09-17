@@ -1,0 +1,13 @@
+project_id = "windhoek-city-cab"
+
+[api]
+enabled = true
+
+[functions.booking-quote]
+verify_jwt = true
+
+[functions.dispatch-booking]
+verify_jwt = true
+
+[functions.provider-webhook]
+verify_jwt = false
