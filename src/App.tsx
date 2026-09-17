@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,10 +16,18 @@ import Trips from "./pages/Trips.tsx";
 import Profile from "./pages/Profile.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import { BottomNav } from "./components/BottomNav.tsx";
+import Onboarding from "./pages/Onboarding.tsx";
+import Auth from "./pages/Auth.tsx";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  const [entry, setEntry] = useState<"checking" | "onboarding" | "auth" | "app">("checking");
+  useEffect(() => { setEntry(localStorage.getItem("citycab_session") ? "app" : localStorage.getItem("citycab_onboarded") ? "auth" : "onboarding"); }, []);
+  if (entry === "checking") return null;
+  if (entry === "onboarding") return <Onboarding onComplete={() => { localStorage.setItem("citycab_onboarded", "true"); setEntry("auth"); }} />;
+  if (entry === "auth") return <Auth onComplete={() => setEntry("app")} />;
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -42,6 +51,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
