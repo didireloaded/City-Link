@@ -1,0 +1,15 @@
+.citycab-driver-map .mapboxgl-ctrl-top-right {
+  top: 200px;
+  right: 10px;
+}
+.citycab-driver-map .mapboxgl-ctrl-bottom-left {
+  top: 200px;
+  bottom: auto;
+  left: 10px;
+}
+.citycab-driver-map .mapboxgl-ctrl-bottom-right {
+  top: 234px;
+  bottom: auto;
+  left: 10px;
+  right: auto;
+}

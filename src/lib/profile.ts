@@ -1,3 +1,4 @@
+import type { SavedPlace } from "../../contracts/places";
 /**
  * Profile domain types. Persistence is server-side via the tRPC `profile`
  * router — see src/hooks/useProfile.ts. No localStorage persistence.
@@ -20,6 +21,7 @@ export interface Profile {
   }[];
   savedRoutes?: { from: string; to: string }[];
   preferences?: {
+    savedPlaces?: SavedPlace[];
     notifications: boolean;
     promoEmails: boolean;
     language: "en" | "af" | "osh";

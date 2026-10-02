@@ -1,3 +1,4 @@
+import SavedPlaces from "./pages/SavedPlaces";
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import BookingPortal from "./pages/BookingPortal.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Results from "./pages/Results.tsx";
+import VehicleDetails from "./pages/VehicleDetails";
 import Booking from "./pages/Booking.tsx";
 import Confirmation from "./pages/Confirmation.tsx";
 import Parcel from "./pages/Parcel.tsx";
@@ -48,6 +50,7 @@ const App = () => {
         <Route path="/" element={<Index />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/book" element={<BookingPortal />} />
+        <Route path="/vehicles/:vehicleId" element={<VehicleDetails />} />
         <Route path="/results" element={<Results />} />
         <Route path="/book/:tripId" element={<Booking />} />
         <Route path="/confirmation" element={<Confirmation />} />
@@ -57,6 +60,7 @@ const App = () => {
         <Route path="/track" element={<Track />} />
         <Route path="/tickets" element={<Trips />} />
         <Route path="/trips" element={<Trips />} />
+        <Route path="/profile/places" element={<SavedPlaces />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lounge" element={<Lounge />} />

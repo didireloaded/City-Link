@@ -50,7 +50,7 @@ const Profile = () => {
     }
     try {
       await topUp.mutateAsync({ amountNad: Math.round(amt) });
-      toast.success(`N$${amt} credited to your City Link Wallet via PayToday!`);
+      toast.success(`N$${amt} credited to your City Cab Wallet via PayToday!`);
       setPane(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Top-up failed.");
@@ -61,7 +61,7 @@ const Profile = () => {
     <div className="safe-page min-h-screen bg-background pb-36">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur-xl">
         <div className="mx-auto max-w-md px-5 h-16 flex items-center justify-between">
-          <h1 className="text-xl font-extrabold tracking-tight text-primary">City Link Profile</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-primary">City Cab Profile</h1>
           <span className="rounded-full bg-accent/20 border border-accent/40 px-3.5 py-1 text-xs font-extrabold text-primary">
             Account
           </span>
@@ -100,7 +100,7 @@ const Profile = () => {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-accent block">
-                City Link Wallet
+                City Cab Wallet
               </span>
               <div className="text-3xl font-extrabold mt-1 tracking-tight">
                 N${(profile.walletBalanceNAD || 0).toLocaleString()}
@@ -121,6 +121,7 @@ const Profile = () => {
         {/* Travel & Passengers */}
         <Section title="My Transfers & Passengers">
           <Row to="/trips" icon={<Ticket />} label="Transfer History" sub="View upcoming, active and completed transfers" />
+          <Row to="/profile/places" icon={<Star />} label="Saved Places" sub="Home, Work, Hotel and custom addresses" />
           <Row onClick={() => setPane("passengers")} icon={<Star />} label="Saved Passengers" sub={`${profile.savedPassengers?.length || 0} saved passenger profiles for 1-click booking`} />
           <Row onClick={() => setPane("ratings")} icon={<Heart />} label="My Journey Reviews" sub={`${ratings.length} completed feedback reviews`} />
         </Section>
@@ -128,14 +129,13 @@ const Profile = () => {
         {/* Preferences & Settings */}
         <Section title="App Settings & Language">
           <Row onClick={() => setPane("settings")} icon={<Settings />} label="Notifications & Language" sub="Transfer pickup alerts, English / Afrikaans" />
-          <Row onClick={() => setPane("privacy")} icon={<Shield />} label="Data & Storage" sub="How City Link stores your account data" />
+          <Row onClick={() => setPane("privacy")} icon={<Shield />} label="Data & Storage" sub="How City Cab stores your account data" />
         </Section>
 
         {/* Help & 24/7 Care */}
         <Section title="Client Care">
           <Row onClick={() => setPane("faq")} icon={<HelpCircle />} label="Frequently Asked Questions" sub="Baggage allowances, flexible reschedules & refunds" />
-          <Row onClick={() => setPane("support")} icon={<MessageCircle />} label="24/7 City Link Support" sub="Instant WhatsApp chat & direct hotline" />
-          <Row to="/support" icon={<ChevronRight />} label="Support Center" sub="Guides, contact channels and service status" />
+          <Row onClick={() => setPane("support")} icon={<MessageCircle />} label="Contact Support" sub="Instant WhatsApp chat & direct hotline" />
         </Section>
 
         <button
@@ -146,7 +146,7 @@ const Profile = () => {
         </button>
 
         <p className="text-center text-xs font-semibold text-muted-foreground pt-2">
-          City Link · Private transfers across Namibia
+          City Cab · Private transfers across Namibia
         </p>
       </div>
 
@@ -227,7 +227,7 @@ const Profile = () => {
             <Toggle label="Push Notifications" sub="Driver assignment, pickup and ETA updates"
               checked={!!profile.preferences?.notifications}
               onChange={(v) => update({ ...profile, preferences: { ...profile.preferences!, notifications: v } })} />
-            <Toggle label="Special Offers & Deals" sub="City Link transfer updates and offers"
+            <Toggle label="Special Offers & Deals" sub="City Cab transfer updates and offers"
               checked={!!profile.preferences?.promoEmails}
               onChange={(v) => update({ ...profile, preferences: { ...profile.preferences!, promoEmails: v } })} />
             <div className="rounded-2xl border border-border bg-card p-4 space-y-2.5">
@@ -251,7 +251,7 @@ const Profile = () => {
         <DialogContent className="max-w-sm rounded-3xl p-6">
           <DialogHeader><DialogTitle className="text-lg font-extrabold">Data & Storage</DialogTitle></DialogHeader>
           <div className="space-y-3 text-xs font-semibold text-muted-foreground pt-2 leading-relaxed">
-            <p>Your bookings, parcels, wallet and preferences are stored securely in your City Link account and sync across devices.</p>
+            <p>Your bookings, parcels, wallet and preferences are stored securely in your City Cab account and sync across devices.</p>
             <p>Only your onboarding preference is kept on this device. Clearing browser data does not delete your account data.</p>
           </div>
         </DialogContent>
@@ -304,19 +304,19 @@ const Profile = () => {
       {/* SUPPORT MODAL */}
       <Dialog open={pane === "support"} onOpenChange={(o) => !o && setPane(null)}>
         <DialogContent className="max-w-sm rounded-3xl p-6">
-          <DialogHeader><DialogTitle className="text-lg font-extrabold">24/7 City Link Support</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-lg font-extrabold">Contact Support</DialogTitle></DialogHeader>
           <div className="space-y-2.5 pt-2">
             <a href="https://wa.me/264818767676" target="_blank" rel="noreferrer" className="flex items-center gap-3.5 p-4 rounded-2xl border border-success/40 bg-success/15 text-foreground active:scale-98 transition-transform">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-success text-white shrink-0 shadow-sm"><MessageCircle className="w-5 h-5" /></div>
-              <div><div className="font-extrabold text-sm text-primary">WhatsApp City Link</div><div className="text-xs font-semibold text-success">Typical reply: under 2 minutes</div></div>
+              <div><div className="font-extrabold text-sm text-primary">WhatsApp City Cab</div><div className="text-xs font-semibold text-success">Chat with City Cab</div></div>
             </a>
             <a href="tel:+264812572188" className="flex items-center gap-3.5 p-4 rounded-2xl border border-border bg-card active:scale-98 transition-transform">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0"><Phone className="w-5 h-5 text-accent" /></div>
-              <div><div className="font-extrabold text-sm text-primary">City Link Hotline</div><div className="text-xs font-semibold text-muted-foreground">+264 81 257 2188</div></div>
+              <div><div className="font-extrabold text-sm text-primary">City Cab Hotline</div><div className="text-xs font-semibold text-muted-foreground">+264 81 257 2188</div></div>
             </a>
             <a href="mailto:info@citylink.na" className="flex items-center gap-3.5 p-4 rounded-2xl border border-border bg-card active:scale-98 transition-transform">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0"><HelpCircle className="w-5 h-5 text-accent" /></div>
-              <div><div className="font-extrabold text-sm text-primary">City Link Email</div><div className="text-xs font-semibold text-muted-foreground">info@citylink.na</div></div>
+              <div><div className="font-extrabold text-sm text-primary">City Cab Email</div><div className="text-xs font-semibold text-muted-foreground">info@citylink.na</div></div>
             </a>
           </div>
         </DialogContent>
@@ -326,10 +326,10 @@ const Profile = () => {
 };
 
 const FAQ = [
-  { q: "Can I change my pickup time?", a: "Use WhatsApp or call City Link as early as possible so dispatch can confirm driver availability." },
-  { q: "How do I top up my City Link Wallet?", a: "You can credit funds instantly using PayToday, MTC Mobile Money, or EFT directly from your profile." },
+  { q: "Can I change my pickup time?", a: "Use WhatsApp or call City Cab as early as possible so dispatch can confirm driver availability." },
+  { q: "How do I top up my City Cab Wallet?", a: "You can credit funds instantly using PayToday, MTC Mobile Money, or EFT directly from your profile." },
   { q: "Can I request extra luggage or child seats?", a: "Yes. Add luggage and child-seat requests during booking or confirm details by WhatsApp." },
-  { q: "Where is my data stored?", a: "Your account, bookings and parcels are stored securely in your City Link account and sync across your devices." },
+  { q: "Where is my data stored?", a: "Your account, bookings and parcels are stored securely in your City Cab account and sync across your devices." },
 ];
 
 const EditProfileForm = ({ profile, isSaving, onSave }: { profile: ProfileT; isSaving: boolean; onSave: (phone: string) => Promise<void> | void }) => {

@@ -1,3 +1,8 @@
+import { validateSchedule, windhoekTime } from "../contracts/booking-time";
+import { recentDestinations } from "../contracts/places";
+import { getDb } from "./queries/connection";
+import { bookings } from "../db/schema";
+import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
@@ -11,6 +16,8 @@ import {
   rateBooking,
   recentReviews,
 } from "./queries/bookings";
+import { VEHICLE_CATEGORIES, createTransferOptions } from "../src/data/trips";
+import { inferService, serviceDefaults } from "../src/lib/transfer-service";
 import { adjustWallet, debitWallet } from "./queries/profiles";
 
 export const bookingRouter = createRouter({
@@ -47,12 +54,13 @@ export const bookingRouter = createRouter({
     .input(
       z.object({
         tripId: z.string().nullish(),
-        service: z.string().min(2).max(64),
+        service: z.enum(["Airport", "City", "Lodge", "Safari", "Executive", "Staff"]),
         vehicle: z.string().min(2).max(128),
         fromLocation: z.string().min(1).max(255),
         toLocation: z.string().min(1).max(255),
         pickup: z.string().max(255).nullish(),
         dropoff: z.string().max(255).nullish(),
+        timing: z.enum(["now", "scheduled"]).default("scheduled"),
         travelDate: z.string().min(8).max(10),
         pickupTime: z.string().min(4).max(5),
         passengers: z.number().int().min(1).max(50),
@@ -70,6 +78,24 @@ export const bookingRouter = createRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const error = input.timing === "scheduled" ? validateSchedule(input.travelDate, input.pickupTime) : null;
+      if (error) throw new TRPCError({ code: "BAD_REQUEST", message: error });
+      const { timing, ...bookingInput } = input;
+      if (timing === "now") { const current = windhoekTime(); bookingInput.travelDate = current.date; bookingInput.pickupTime = current.time; }
+      const vehicle = VEHICLE_CATEGORIES.find(item => item.name === input.vehicle);
+      const inferred = inferService(input.fromLocation, input.toLocation);
+      if (!vehicle || !serviceDefaults[input.service].vehicles.includes(vehicle.id) ||
+          input.passengers > vehicle.capacity || input.luggage > vehicle.luggageCapacity ||
+          (!["Executive", "Staff"].includes(input.service) && inferred !== input.service)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Vehicle, capacity or route does not match this service." });
+      }
+      const fare = createTransferOptions(input.fromLocation, input.toLocation, input.pickupTime).find(item => item.bus.id === vehicle.id);
+      if (!fare || fare.quoteOnly || input.amountNad !== fare.price) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A valid configured fare is required." });
+      }
+      if (input.paymentMethod !== "Store Credit Wallet") {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Online payment provider is not connected." });
+      }
       if (input.paymentMethod === "Store Credit Wallet") {
         const ok = await debitWallet(ctx.user.id, input.amountNad);
         if (!ok) {
@@ -80,11 +106,16 @@ export const bookingRouter = createRouter({
         }
       }
       return createBooking({
-        ...input,
+        ...bookingInput,
         passengerEmail: input.passengerEmail || null,
         userId: ctx.user.id,
       });
     }),
+
+  recentDestinations: authedQuery.query(async ({ ctx }) => {
+    const rows = await getDb().query.bookings.findMany({ where: eq(bookings.userId, ctx.user.id), orderBy: (booking, { desc }) => [desc(booking.createdAt)], limit: 100 });
+    return recentDestinations(rows.filter(row => row.status !== "held" && row.status !== "cancelled")).map(row => ({ locality: row.toLocation, address: row.dropoff || row.toLocation }));
+  }),
 
   listMine: authedQuery.query(async ({ ctx }) => {
     return listBookingsByUser(ctx.user.id);

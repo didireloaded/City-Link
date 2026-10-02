@@ -280,3 +280,31 @@
 }
 .destination-map-pin { padding: 6px 10px; border: 1px solid white; border-radius: 12px; background: #102b3b; color: white; font-size: 11px; box-shadow: 0 2px 8px #0003; }
 .mapboxgl-ctrl-group { border-radius: 12px; overflow: hidden; }
+.vehicle-white {
+  background: #fff !important;
+  backdrop-filter: none;
+}
+.home-map-surface {
+  margin-inline: -20px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.home-map-feather {
+  --map-feather: linear-gradient(to bottom, transparent 0, #00000008 18px, #00000025 42px, #00000070 78px, #000000c4 114px, #000 150px, #000 calc(100% - 150px), #000000c4 calc(100% - 114px), #00000070 calc(100% - 78px), #00000025 calc(100% - 42px), #00000008 calc(100% - 18px), transparent 100%);
+  mask-image: var(--map-feather);
+  -webkit-mask-image: var(--map-feather);
+}
+
+.home-destination-sheet {
+  position: fixed;
+  z-index: 35;
+  bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 424px);
+  max-height: calc(100svh - 220px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

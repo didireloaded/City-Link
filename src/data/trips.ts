@@ -224,7 +224,7 @@ export const createTransferOptions = (from: string, to: string, pickupTime = "14
       stops: priced ? ["Meet & Greet available", "Luggage assistance"] : ["Private route", "Driver assigned after confirmation"],
       pickup: PICKUP_POINTS[from]?.[0] || from,
       dropoff: PICKUP_POINTS[to]?.[0] || to,
-      badge: priced ? "Airport-Windhoek Rate" : "Request Quote",
+      badge: priced ? "Airport-Windhoek Rate" : "Fare unavailable",
       operatingDays: ["Every day"],
       serviceType: [from, to].includes("Hosea Kutako International Airport") ? "Airport Transfer" : "Private Transfer",
     };
@@ -254,7 +254,7 @@ export const INTERACTIVE_ROUTES: CityLinkRoute[] = [
     id: "windhoek-swakopmund",
     origin: "Windhoek",
     destination: "Swakopmund",
-    durationDisplay: "Request Quote",
+    durationDisplay: "Fare unavailable",
     priceNAD: 0,
     departureTime: "Scheduled",
     arrivalTime: "Tracked",
@@ -271,10 +271,10 @@ export const INTERACTIVE_ROUTES: CityLinkRoute[] = [
 
 export const POPULAR_ROUTES = [
   { from: "Hosea Kutako International Airport", to: "Windhoek", price: 450, duration: "45-55 min" },
-  { from: "Windhoek", to: "Swakopmund", price: 0, duration: "Request Quote" },
-  { from: "Windhoek", to: "Sossusvlei", price: 0, duration: "Request Quote" },
-  { from: "Windhoek", to: "Etosha National Park", price: 0, duration: "Request Quote" },
-  { from: "Windhoek", to: "Fish River Canyon", price: 0, duration: "Request Quote" },
+  { from: "Windhoek", to: "Swakopmund", price: 0, duration: "Fare unavailable" },
+  { from: "Windhoek", to: "Sossusvlei", price: 0, duration: "Fare unavailable" },
+  { from: "Windhoek", to: "Etosha National Park", price: 0, duration: "Fare unavailable" },
+  { from: "Windhoek", to: "Fish River Canyon", price: 0, duration: "Fare unavailable" },
 ];
 
 export const LUGGAGE = [

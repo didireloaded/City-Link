@@ -6,7 +6,12 @@ export const serviceDefaults: Record<string, { from: string; to: string; vehicle
   Executive: { from: "Windhoek", to: "Windhoek West", vehicles: ["suv", "compact-suv"] },
   Staff: { from: "Windhoek", to: "Windhoek West", vehicles: ["mini-bus"] },
 };
-export function inferService(from: string, to: string) {
+export type TransferService = "Airport" | "City" | "Lodge" | "Safari" | "Executive" | "Staff";
+export function resolveService(value: string | null, from: string, to: string): TransferService {
+  if (value === "Airport" || value === "City" || value === "Lodge" || value === "Safari" || value === "Executive" || value === "Staff") return value;
+  return inferService(from, to);
+}
+export function inferService(from: string, to: string): TransferService {
   if (/airport/i.test(`${from} ${to}`)) return "Airport";
   if (/Etosha|Fish River/i.test(to)) return "Safari";
   if (/Sossusvlei|Swakopmund/i.test(to)) return "Lodge";

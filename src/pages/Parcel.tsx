@@ -57,29 +57,12 @@ const Parcel = () => {
                   <Link to={bookingLink(service.title.split(" ")[0])} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-accent text-xs font-extrabold text-accent-foreground">
                     Book Transfer <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
-                  <a href={`https://wa.me/${CITY_LINK_INFO.contact.whatsapp}`} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-success/15 text-xs font-extrabold text-success">
-                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                  </a>
                 </div>
               </article>
             );
           })}
         </section>
 
-        <section className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <h3 className="text-sm font-extrabold text-primary">24/7 Support</h3>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            {CITY_LINK_INFO.contact.address}
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <a href="tel:+264812572188" className="flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-extrabold text-primary">
-              <Phone className="h-4 w-4 text-accent" /> Call
-            </a>
-            <a href={`mailto:${CITY_LINK_INFO.contact.email}`} className="flex h-11 items-center justify-center rounded-xl bg-secondary text-xs font-extrabold text-primary">
-              Email
-            </a>
-          </div>
-        </section>
       </main>
     </div>
   );

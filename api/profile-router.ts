@@ -1,3 +1,4 @@
+import { savedPlacesSchema } from "../contracts/places";
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
 import { adjustWallet, getOrCreateProfile, updateProfile } from "./queries/profiles";
@@ -41,6 +42,7 @@ export const profileRouter = createRouter({
           .optional(),
         preferences: z
           .object({
+            savedPlaces: savedPlacesSchema.optional(),
             notifications: z.boolean(),
             promoEmails: z.boolean(),
             language: z.enum(["en", "af", "osh"]),

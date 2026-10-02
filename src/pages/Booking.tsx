@@ -8,6 +8,7 @@ import { trpc } from "@/providers/trpc";
 import { createTransferOptions, LUGGAGE } from "@/data/trips";
 import { Baby, Check, Luggage, MapPin, MessageSquare, ShieldCheck, Sparkles, Star, Users } from "lucide-react";
 import { toast } from "sonner";
+import { resolveService } from "@/lib/transfer-service";
 
 type Step = 1 | 2 | 3;
 type Payment = "card" | "eft" | "cash";
@@ -69,12 +70,16 @@ export const Booking = () => {
   }, [profile.name, profile.phone, profile.email]);
 
   const luggage = LUGGAGE.find((item) => item.id === "checked") || LUGGAGE[0];
-  const serviceFee = trip.quoteOnly ? 0 : 25;
+  const serviceFee = 0;
   const subtotal = trip.quoteOnly ? 0 : trip.price;
   const total = subtotal + serviceFee + luggage.price;
 
   const next = () => {
     if (step === 2) {
+      if (!Number.isInteger(Number(form.luggage)) || Number(form.luggage) < 0 || Number(form.luggage) > trip.bus.luggageCapacity || passengerCount > trip.bus.capacity) {
+        toast.error("Passengers or luggage exceed this vehicle capacity. Choose a larger vehicle.");
+        return;
+      }
       if (!form.name || !form.surname || !form.phone) {
         toast.error("Please add passenger contact details.");
         return;
@@ -86,7 +91,7 @@ export const Booking = () => {
 
   const confirm = () => {
     if (trip.quoteOnly) {
-      toast.success("Quote request prepared. City Cab can confirm this route by WhatsApp.");
+      toast.error("Online booking is unavailable until this route has a configured fare.");
       return;
     }
     setIsGatewayOpen(true);
@@ -94,7 +99,7 @@ export const Booking = () => {
 
   return (
     <div className="safe-page bg-background">
-      <TopBar title={`${shortPlace(trip.from)} to ${shortPlace(trip.to)}`} subtitle={`${formattedDate} · ${pickupTime} · ${trip.bus.name}`} />
+      <TopBar title={`${shortPlace(trip.from)} to ${shortPlace(trip.to)}`} subtitle={`${params.get("timing") === "now" ? "Now" : formattedDate + " · " + pickupTime} · ${trip.bus.name}`} />
 
       <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
         <Stepper step={step} />
@@ -114,7 +119,7 @@ export const Booking = () => {
               </p>
             </div>
             <div className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-extrabold">
-              {trip.quoteOnly ? "Quote" : `N$${trip.price}`}
+              {trip.quoteOnly ? "Fare unavailable" : `N$${trip.price}`}
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] font-bold text-white/80 border-t border-white/10 pt-3">
@@ -132,11 +137,11 @@ export const Booking = () => {
 
         {step === 1 && (
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm space-y-4 animate-fade-up">
-            <div className="relative h-44 overflow-hidden rounded-3xl bg-gradient-to-b from-[#f7f6f0] via-[#e9edf2] to-[#d9dee7]">
-              <div className="absolute inset-x-8 bottom-10 h-10 rounded-full bg-black/15 blur-xl" />
+            <div className="vehicle-white relative h-44 overflow-hidden rounded-lg">
+
               <img src={trip.bus.imageUrl} alt={`${trip.bus.name} vehicle`} className="absolute left-1/2 top-7 h-28 w-[118%] -translate-x-1/2 scale-[1.55] object-contain drop-shadow-2xl" />
               <span className="absolute right-4 top-4 rounded-full bg-card/90 px-3 py-1 text-xs font-extrabold text-primary shadow-sm">
-                {trip.quoteOnly ? "Request Quote" : `N$${trip.price}`}
+                {trip.quoteOnly ? "Fare unavailable" : `N$${trip.price}`}
               </span>
             </div>
             <div className="flex items-start justify-between gap-3">
@@ -152,7 +157,7 @@ export const Booking = () => {
               <Info label="Pickup">{shortPlace(from)}</Info>
               <Info label="Destination">{shortPlace(to)}</Info>
               <Info label="Passengers">{passengerCount}</Info>
-              <Info label="Pricing">{trip.quoteOnly ? "Request Quote" : `N$${trip.price}`}</Info>
+              <Info label="Pricing">{trip.quoteOnly ? "Fare unavailable" : `N$${trip.price}`}</Info>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {trip.bus.amenities.map((amenity) => (
@@ -254,17 +259,14 @@ export const Booking = () => {
             <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4 space-y-2">
               <div className="flex items-center gap-2 text-primary font-extrabold text-xs">
                 <ShieldCheck className="h-4 w-4 text-success shrink-0" />
-                <span>{trip.quoteOnly ? "Quote request ready" : "Ready for secure authorization"}</span>
+                <span>{trip.quoteOnly ? "Fare unavailable" : "Review your ride"}</span>
               </div>
               <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
                 {trip.quoteOnly
-                  ? "City Cab will confirm pricing for this private route before payment."
-                  : "Confirm the transfer and complete payment using the existing secure checkout modal."}
+                  ? "Online booking for this route is not available yet."
+                  : "Your ride confirmation belongs here in the app. WhatsApp is a notification channel, not a pricing approval step."}
               </p>
             </div>
-            <a href="https://wa.me/264812572188" target="_blank" rel="noreferrer" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-success/15 text-sm font-extrabold text-success">
-              <MessageSquare className="h-4 w-4" /> WhatsApp City Cab
-            </a>
           </div>
         )}
 
@@ -278,9 +280,9 @@ export const Booking = () => {
               Continue to {step === 1 ? "Passenger Details" : "Summary"} &gt;
             </button>
           ) : (
-            <button type="button" onClick={confirm} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+            <button type="button" onClick={confirm} disabled={trip.quoteOnly} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
               <ShieldCheck className="h-5 w-5 text-accent" />
-              <span>{trip.quoteOnly ? "Request Quote" : `Confirm & Pay N$${total}`}</span>
+              <span>{trip.quoteOnly ? "Fare unavailable" : `Confirm & Pay N$${total}`}</span>
             </button>
           )}
         </div>
@@ -295,12 +297,13 @@ export const Booking = () => {
           try {
             const booking = await createBooking.mutateAsync({
               tripId: trip.id,
-              service: trip.serviceType || "City Transfer",
+              service: resolveService(params.get("service"), from, to),
               vehicle: trip.bus.name,
               fromLocation: from,
               toLocation: to,
               pickup,
               dropoff,
+              timing: params.get("timing") === "now" ? "now" : "scheduled",
               travelDate,
               pickupTime,
               passengers: passengerCount,
@@ -372,12 +375,12 @@ const FareSummary = ({ vehicle, subtotal, serviceFee, total, quoteOnly }: { vehi
     </h3>
     <div className="space-y-2 text-xs font-bold">
       <Row label="Selected Vehicle">{vehicle}</Row>
-      <Row label="Transfer Fare">{quoteOnly ? "Request Quote" : `N$${subtotal}`}</Row>
+      <Row label="Transfer Fare">{quoteOnly ? "Fare unavailable" : `N$${subtotal}`}</Row>
       {!quoteOnly && <Row label="Booking & Service Fee">N${serviceFee}</Row>}
     </div>
     <div className="border-t border-border pt-3 flex items-center justify-between">
       <span className="text-sm font-extrabold text-muted-foreground">{quoteOnly ? "Payment" : "Total Due"}</span>
-      <span className="text-2xl font-extrabold text-primary">{quoteOnly ? "After quote" : `N$${total}`}</span>
+      <span className="text-2xl font-extrabold text-primary">{quoteOnly ? "Unavailable" : `N$${total}`}</span>
     </div>
   </section>
 );

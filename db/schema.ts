@@ -1,3 +1,4 @@
+import type { SavedPlace } from "../contracts/places";
 import {
   mysqlTable,
   mysqlEnum,
@@ -58,6 +59,7 @@ export type SavedPassenger = {
 export type SavedRoute = { from: string; to: string };
 
 export type ProfilePreferences = {
+  savedPlaces?: SavedPlace[];
   notifications: boolean;
   promoEmails: boolean;
   language: "en" | "af" | "osh";

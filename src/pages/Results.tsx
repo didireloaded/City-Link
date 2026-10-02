@@ -18,9 +18,11 @@ const Results = () => {
   const service = params.get("service") || inferService(from, to);
   const [sort, setSort] = useState<"recommended" | "price" | "capacity">("recommended");
 
-  const sorted = createTransferOptions(from, to, pickupTime).filter(trip => (!serviceDefaults[service] || serviceDefaults[service].vehicles.includes(trip.bus.id)) && trip.bus.capacity >= Number(passengers) && (!params.get("vehicle") || trip.bus.id === params.get("vehicle"))).sort((a, b) => {
+  const sorted = createTransferOptions(from, to, pickupTime).filter(trip => (!serviceDefaults[service] || serviceDefaults[service].vehicles.includes(trip.bus.id)) && trip.bus.capacity >= Number(passengers) && trip.bus.luggageCapacity >= Number(params.get("luggage") || 0)).sort((a, b) => {
     if (sort === "price") return (a.price || 99999) - (b.price || 99999);
     if (sort === "capacity") return b.bus.capacity - a.bus.capacity;
+    if (a.bus.id === params.get("vehicle")) return -1;
+    if (b.bus.id === params.get("vehicle")) return 1;
     const serviceRank = recommendedRank(service);
     return (serviceRank[a.bus.id] ?? 10) - (serviceRank[b.bus.id] ?? 10);
   });
@@ -73,9 +75,9 @@ const Results = () => {
             <Link
               key={trip.id}
               to={`/book/${trip.id}?${params.toString()}`}
-              className="block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-transform active:scale-[0.99]"
+              className="block overflow-hidden rounded-lg border border-border vehicle-white shadow-sm transition-transform active:scale-[0.99]"
             >
-              <div className="vehicle-stage relative h-36 overflow-hidden">
+              <div className="vehicle-white relative h-36 overflow-hidden">
                 <img src={trip.bus.imageUrl} alt={trip.bus.model} className="absolute inset-0 h-full w-full object-contain p-3 pt-8" />
                 {recommendationLabel(service, trip.bus.id) && <span className="absolute left-2 top-2 rounded-lg bg-accent px-2 py-1 text-[9px] font-bold text-primary">{recommendationLabel(service, trip.bus.id)}</span>}
               </div>
@@ -83,7 +85,7 @@ const Results = () => {
                 <h2 className="text-base font-extrabold text-primary">{trip.bus.name}</h2>
                 <p className="mt-1 min-h-8 text-[11px] leading-4 text-muted-foreground">{trip.bus.model}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{trip.bus.capacity}</span><span className="flex items-center gap-1"><Luggage className="h-3.5 w-3.5" />{trip.bus.luggageCapacity}</span></div>
-                <p className="mt-3 text-lg font-extrabold text-primary">{trip.quoteOnly ? "Get quote" : `N$${trip.price}`}</p>
+                <p className="mt-3 text-lg font-extrabold text-primary">{trip.quoteOnly ? "Fare unavailable" : `N$${trip.price}`}</p>
                 <div className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-white">Select <ArrowRight className="h-3.5 w-3.5" /></div>
               </div>
             </Link>

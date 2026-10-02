@@ -167,7 +167,7 @@ const Trips = () => {
 
                 <div className="mt-4 rounded-xl bg-secondary p-3 text-sm font-semibold text-muted-foreground flex items-center justify-between">
                   <span>{booking.service} · {booking.driverState}</span>
-                  <span className="text-xs font-extrabold text-primary">{booking.amount ? `N$${booking.amount}` : "Request Quote"}</span>
+                  <span className="text-xs font-extrabold text-primary">{booking.amount ? `N$${booking.amount}` : "Fare unavailable"}</span>
                 </div>
 
                 {booking.status === "upcoming" || booking.status === "active" ? (
