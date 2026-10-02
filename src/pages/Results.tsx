@@ -1,3 +1,4 @@
+import { inferService, serviceDefaults } from "@/lib/transfer-service";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AmenityIcon } from "@/components/Brand";
@@ -14,10 +15,10 @@ const Results = () => {
   const pickup = params.get("pickup") || "Arrivals Hall Meet & Greet";
   const dropoff = params.get("dropoff") || "Hotel pickup";
   const pickupTime = params.get("pickupTime") || "14:30";
-  const service = params.get("service") || "Airport";
+  const service = params.get("service") || inferService(from, to);
   const [sort, setSort] = useState<"recommended" | "price" | "capacity">("recommended");
 
-  const sorted = createTransferOptions(from, to, pickupTime).sort((a, b) => {
+  const sorted = createTransferOptions(from, to, pickupTime).filter(trip => (!serviceDefaults[service] || serviceDefaults[service].vehicles.includes(trip.bus.id)) && trip.bus.capacity >= Number(passengers) && (!params.get("vehicle") || trip.bus.id === params.get("vehicle"))).sort((a, b) => {
     if (sort === "price") return (a.price || 99999) - (b.price || 99999);
     if (sort === "capacity") return b.bus.capacity - a.bus.capacity;
     const serviceRank = recommendedRank(service);
@@ -67,10 +68,11 @@ const Results = () => {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4">
+          {sorted.length === 0 && <div className="rounded-2xl bg-card p-5"><h2 className="font-extrabold text-primary">Try another vehicle</h2><p className="mt-2 text-sm text-muted-foreground">No matching vehicle has room for this group.</p><Link to={`/book?${params.toString()}`} className="mt-4 inline-block font-bold text-primary">Edit ride details</Link></div>}
           {sorted.map((trip) => (
             <Link
               key={trip.id}
-              to={`/book/${trip.id}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&passengers=${passengers}&date=${date}&pickupTime=${pickupTime}&pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`}
+              to={`/book/${trip.id}?${params.toString()}`}
               className="block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-transform active:scale-[0.99]"
             >
               <div className="relative h-48 overflow-hidden bg-gradient-to-b from-[#f7f6f0] via-[#e9edf2] to-[#d9dee7]">

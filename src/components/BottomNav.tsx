@@ -16,7 +16,7 @@ export const BottomNav = () => {
       <div className="mx-auto max-w-md px-3 pb-3 pointer-events-auto">
         <div className="citycab-glass-nav relative flex h-[74px] items-center justify-between rounded-[28px] border px-3">
           <SideTab to="/" label="Home" icon={<Home className="h-5 w-5" />} active={pathname === "/"} />
-          <SideTab to="/tickets" label="Transfers" icon={<MapPinned className="h-5 w-5" />} active={is("/tickets") || is("/trips")} />
+          <SideTab to="/tickets" label="Rides" icon={<MapPinned className="h-5 w-5" />} active={is("/tickets") || is("/trips")} />
           
           <Link
             to="/book"

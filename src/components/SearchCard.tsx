@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { inferService, serviceDefaults } from "@/lib/transfer-service";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { PICKUP_POINTS, ROUTES } from "@/data/trips";
 import { ArrowLeftRight, ArrowRight, Calendar, Luggage, MapPin, Plane, Sparkles, Tag } from "lucide-react";
 
 export const SearchCard = ({ compact = false }: { compact?: boolean }) => {
   const navigate = useNavigate();
+  const [query] = useSearchParams();
+  const preset = serviceDefaults[query.get("service") || ""];
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
 
-  const [from, setFrom] = useState("Hosea Kutako International Airport");
-  const [to, setTo] = useState("Windhoek");
+  const [from, setFrom] = useState(query.get("from") || preset?.from || "Windhoek");
+  const [to, setTo] = useState(query.get("to") || preset?.to || "Windhoek West");
   const [pickup, setPickup] = useState(PICKUP_POINTS["Hosea Kutako International Airport"]?.[0] || "Arrivals Hall Meet & Greet");
   const [dropoff, setDropoff] = useState(PICKUP_POINTS.Windhoek?.[0] || "Hotel pickup");
   const [date, setDate] = useState(today);
@@ -33,6 +36,8 @@ export const SearchCard = ({ compact = false }: { compact?: boolean }) => {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams({
+      service: ["Executive", "Staff"].includes(query.get("service") || "") ? query.get("service")! : inferService(from, to),
+      vehicle: query.get("vehicle") || "",
       from,
       to,
       date,

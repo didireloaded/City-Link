@@ -16,6 +16,7 @@ import Trips from "./pages/Trips.tsx";
 import Profile from "./pages/Profile.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import { BottomNav } from "./components/BottomNav.tsx";
+import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding.tsx";
 import Auth from "./pages/Auth.tsx";
 
@@ -34,6 +35,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/" element={<Index />} />
           <Route path="/book" element={<BookingPortal />} />
           <Route path="/results" element={<Results />} />
