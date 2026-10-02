@@ -31,12 +31,12 @@ export const Index = () => {
           </Link>
         </header>
 
-        <section className="mt-8">
+        <section className="mt-6">
           <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
             <MapPin className="h-4 w-4 text-accent" />
             <span>Windhoek</span>
           </div>
-          <h1 className="mt-4 text-3xl font-extrabold leading-tight text-primary">Hello {firstName}!</h1>
+          <h1 className="mt-3 text-3xl font-extrabold leading-tight text-primary">Hello {firstName}!</h1>
           <p className="mt-2 text-sm font-semibold text-muted-foreground">Book a private City Cab transfer.</p>
 
           <div className="mt-6 flex h-20 w-full items-center gap-2 rounded-[28px] bg-card px-4 shadow-sm ring-1 ring-border">
@@ -48,13 +48,13 @@ export const Index = () => {
           </div>
         </section>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-5 grid grid-cols-5 gap-1.5">
           {SERVICES.map((service) => (
             <button
               key={service}
               aria-pressed={selectedService === service}
               onClick={() => setSelectedService(service)}
-              className={`h-12 min-w-[92px] rounded-2xl px-5 text-sm font-extrabold transition active:scale-95 ${
+              className={`h-11 min-w-0 rounded-xl px-1 text-xs font-extrabold transition active:scale-95 ${
                 selectedService === service ? "bg-accent text-accent-foreground shadow-[var(--shadow-glow)]" : "bg-card text-muted-foreground ring-1 ring-border"
               }`}
             >
@@ -69,19 +69,19 @@ export const Index = () => {
             <button
               key={vehicle.id}
               onClick={() => navigate(bookingLink(selectedService, vehicle.id))}
-              className={`group overflow-hidden rounded-[26px] text-left shadow-sm ring-1 ring-border transition active:scale-[0.99] ${
+              className={`fleet-card group overflow-hidden rounded-[22px] text-left shadow-sm ring-1 ring-border transition active:scale-[0.99] ${
                 index === 0 ? "col-span-2 bg-accent text-accent-foreground" : "bg-card text-primary"
               }`}
             >
-              <div className={`${index === 0 ? "h-56" : "h-36"} relative overflow-hidden bg-gradient-to-b from-white to-secondary`}>
+              <div className={`${index === 0 ? "h-44" : "h-32"} vehicle-stage relative overflow-hidden`}>
                 <div className="absolute inset-x-8 bottom-8 h-8 rounded-full bg-primary/15 blur-xl" />
                 <img
                   src={vehicle.imageUrl}
                   alt={`${vehicle.model} vehicle`}
-                  className={`absolute left-1/2 object-contain drop-shadow-2xl transition duration-500 group-hover:scale-[1.5] ${
+                  className={`absolute left-1/2 object-contain drop-shadow-2xl transition duration-500 group-hover:scale-105 ${
                     index === 0
-                      ? "top-16 h-32 w-[120%] -translate-x-1/2 scale-[1.4]"
-                      : "top-11 h-20 w-[145%] -translate-x-1/2 scale-[1.45]"
+                      ? "inset-y-4 h-[calc(100%-2rem)] w-[92%] -translate-x-1/2"
+                      : "inset-y-4 h-[calc(100%-2rem)] w-[95%] -translate-x-1/2"
                   }`}
                 />
                 <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-xs font-extrabold text-primary shadow-sm">
@@ -90,8 +90,8 @@ export const Index = () => {
                 </span>
               </div>
               <div className={index === 0 ? "p-5" : "p-4"}>
-                <p className="text-[10px] font-extrabold uppercase text-primary/55">City Cab Fleet</p>
-                <h2 className={index === 0 ? "mt-1 text-3xl font-extrabold text-primary" : "mt-1 text-xl font-extrabold text-primary"}>
+                <p className="text-[10px] font-bold text-primary/60">{vehicle.capacity} passengers · {vehicle.luggageCapacity} bags</p>
+                <h2 className={index === 0 ? "mt-1 text-2xl font-extrabold text-primary" : "mt-1 text-lg font-extrabold text-primary"}>
                   {vehicle.name}
                 </h2>
                 <p className="mt-1 text-xs font-bold text-muted-foreground">{vehicle.model}</p>

@@ -36,7 +36,7 @@ const Results = () => {
       <main className="mx-auto max-w-md px-4 pt-4">
         <section className="rounded-2xl bg-primary p-4 text-primary-foreground shadow-[var(--shadow-elegant)]">
           <p className="text-[11px] font-extrabold uppercase text-white/70">{service} Transfer</p>
-          <div className="mt-2 flex items-center gap-2 text-xl font-extrabold">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-lg font-extrabold">
             {shortPlace(from)} <ArrowRight className="h-5 w-5 text-accent" /> {shortPlace(to)}
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold text-white/75">
@@ -67,81 +67,24 @@ const Results = () => {
           ))}
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4">
-          {sorted.length === 0 && <div className="rounded-2xl bg-card p-5"><h2 className="font-extrabold text-primary">Try another vehicle</h2><p className="mt-2 text-sm text-muted-foreground">No matching vehicle has room for this group.</p><Link to={`/book?${params.toString()}`} className="mt-4 inline-block font-bold text-primary">Edit ride details</Link></div>}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {sorted.length === 0 && <div className="col-span-2 rounded-2xl bg-card p-5"><h2 className="font-extrabold text-primary">Try another vehicle</h2><p className="mt-2 text-sm text-muted-foreground">No matching vehicle has room for this group.</p><Link to={`/book?${params.toString()}`} className="mt-4 inline-block font-bold text-primary">Edit ride details</Link></div>}
           {sorted.map((trip) => (
             <Link
               key={trip.id}
               to={`/book/${trip.id}?${params.toString()}`}
               className="block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-transform active:scale-[0.99]"
             >
-              <div className="relative h-48 overflow-hidden bg-gradient-to-b from-[#f7f6f0] via-[#e9edf2] to-[#d9dee7]">
-                <div className="absolute inset-x-5 bottom-12 h-12 rounded-full bg-black/15 blur-xl" />
-                <img src={trip.bus.imageUrl} alt={`${trip.bus.name} vehicle`} className="absolute left-1/2 top-7 h-32 w-[118%] -translate-x-1/2 scale-[1.55] object-contain drop-shadow-2xl" />
-                <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-[11px] font-extrabold text-accent-foreground shadow-sm">
-                  {recommendationLabel(service, trip.bus.id) || trip.badge}
-                </span>
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-primary">
-                  <div>
-                    <p className="text-[11px] font-bold text-muted-foreground">Vehicle</p>
-                    <h2 className="text-lg font-extrabold">{trip.bus.name}</h2>
-                  </div>
-                  <span className="flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-xs font-extrabold backdrop-blur shadow-sm">
-                    <Star className="h-3.5 w-3.5 fill-accent text-accent" /> {trip.bus.rating}
-                  </span>
-                </div>
+              <div className="vehicle-stage relative h-36 overflow-hidden">
+                <img src={trip.bus.imageUrl} alt={trip.bus.model} className="absolute inset-0 h-full w-full object-contain p-3 pt-8" />
+                {recommendationLabel(service, trip.bus.id) && <span className="absolute left-2 top-2 rounded-lg bg-accent px-2 py-1 text-[9px] font-bold text-primary">{recommendationLabel(service, trip.bus.id)}</span>}
               </div>
-
-              <div className="p-4">
-                <div className="flex items-center gap-3">
-                  <TimeBlock city={shortPlace(trip.from)} time={trip.departure} />
-                  <div className="flex flex-1 flex-col items-center">
-                    <div className="mb-1 flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" /> {trip.duration}
-                    </div>
-                    <div className="relative h-px w-full bg-border">
-                      <span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
-                      <span className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
-                    </div>
-                  </div>
-                  <TimeBlock city={shortPlace(trip.to)} time={trip.arrival} align="right" />
-                </div>
-
-                <div className="mt-4 rounded-xl bg-secondary p-3">
-                  <div className="mb-2 flex items-center justify-between text-xs font-extrabold text-primary">
-                    <span>{trip.bus.model}</span>
-                    <span>{trip.serviceType}</span>
-                  </div>
-                  <p className="text-xs font-semibold text-muted-foreground">{trip.stops.join(" · ")}</p>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {trip.bus.amenities.slice(0, 5).map((amenity) => (
-                    <AmenityIcon key={amenity} a={amenity} />
-                  ))}
-                </div>
-
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div className="min-w-0 text-xs font-semibold text-muted-foreground">
-                    <p className="mt-1 flex items-center gap-1 text-success">
-                      <Users className="h-3.5 w-3.5" /> Up to {trip.bus.capacity} passengers
-                    </p>
-                    <p className="mt-1 flex items-center gap-1">
-                      <Luggage className="h-3.5 w-3.5 text-primary" /> {trip.bus.luggageCapacity} luggage
-                    </p>
-                    <p className="mt-1 flex items-center gap-1">
-                      <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Air-conditioned private transfer
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] font-bold uppercase text-muted-foreground">{trip.quoteOnly ? "Pricing" : "Starting from"}</p>
-                    <p className="text-2xl font-extrabold text-primary">{trip.quoteOnly ? "Request Quote" : `N$${trip.price}`}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex h-12 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">
-                  Select Vehicle
-                </div>
+              <div className="p-3">
+                <h2 className="text-base font-extrabold text-primary">{trip.bus.name}</h2>
+                <p className="mt-1 min-h-8 text-[11px] leading-4 text-muted-foreground">{trip.bus.model}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{trip.bus.capacity}</span><span className="flex items-center gap-1"><Luggage className="h-3.5 w-3.5" />{trip.bus.luggageCapacity}</span></div>
+                <p className="mt-3 text-lg font-extrabold text-primary">{trip.quoteOnly ? "Get quote" : `N$${trip.price}`}</p>
+                <div className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-white">Select <ArrowRight className="h-3.5 w-3.5" /></div>
               </div>
             </Link>
           ))}
