@@ -1,3 +1,4 @@
+import { RideFleet } from "@/components/RideFleet";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { RatingModal } from "@/components/RatingModal";
@@ -81,7 +82,7 @@ const Trips = () => {
     <div className="safe-page bg-background pb-24">
       <header className="sticky top-0 z-30 border-b border-border bg-background/92 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-md items-center justify-between px-5">
-          <h1 className="text-xl font-extrabold text-primary">My Transfers</h1>
+          <h1 className="text-xl font-extrabold text-primary">Rides</h1>
           <div className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-extrabold text-accent">
             <Wallet className="h-3.5 w-3.5" />
             <span>N${(profile.walletBalanceNAD || 0).toLocaleString()} Credit</span>
@@ -90,6 +91,7 @@ const Trips = () => {
       </header>
 
       <main className="mx-auto max-w-md px-5 pt-4">
+        <RideFleet />
         <div className="grid grid-cols-4 gap-1 rounded-xl bg-secondary p-1">
           {tabs.map((item) => (
             <button

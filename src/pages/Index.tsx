@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { bookingLink, serviceDefaults } from "@/lib/transfer-service";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, CarTaxiFront, MapPin, Search, SlidersHorizontal, Star } from "lucide-react";
+import { Bell, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { Logo } from "@/components/Brand";
 import { useProfile } from "@/hooks/useProfile";
-import { VEHICLE_CATEGORIES } from "@/data/trips";
+const HomeMap = lazy(() => import("@/components/HomeMap"));
 
 const SERVICES = ["All", "Airport", "City", "Lodge", "Safari"];
 
@@ -15,7 +15,6 @@ export const Index = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { profile } = useProfile();
   const firstName = profile.name && profile.name !== "Guest user" ? profile.name.split(" ")[0] : "Traveler";
-  const homeFleet = VEHICLE_CATEGORIES.filter((vehicle) => (selectedService === "All" ? ["sedan", "compact-suv", "suv"] : serviceDefaults[selectedService].vehicles).includes(vehicle.id) && vehicle.capacity >= passengers);
 
   return (
     <div className="safe-page bg-background pb-32">
@@ -40,7 +39,7 @@ export const Index = () => {
           <p className="mt-2 text-sm font-semibold text-muted-foreground">Book a private City Cab transfer.</p>
 
           <div className="mt-6 flex h-20 w-full items-center gap-2 rounded-[28px] bg-card px-4 shadow-sm ring-1 ring-border">
-            <button onClick={() => navigate(bookingLink(selectedService))} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+            <button onClick={() => navigate(`${bookingLink(selectedService)}&passengers=${passengers}`)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
               <Search className="h-5 w-5 shrink-0 text-primary" />
               <span><span className="block text-base font-extrabold text-primary">Where to?</span><span className="block text-xs text-muted-foreground">Choose your pickup and destination</span></span>
             </button>
@@ -64,48 +63,7 @@ export const Index = () => {
         </div>
 
         {filtersOpen && <label className="mt-4 flex items-center justify-between rounded-2xl bg-card p-4 text-sm font-bold">Passengers<select aria-label="Minimum passenger capacity" value={passengers} onChange={event => setPassengers(Number(event.target.value))} className="rounded-lg p-2">{[1,2,3,4,6,12].map(count => <option key={count} value={count}>{count}</option>)}</select></label>}
-        <section className="mt-4 grid grid-cols-2 gap-3">
-          {homeFleet.map((vehicle, index) => (
-            <button
-              key={vehicle.id}
-              onClick={() => navigate(bookingLink(selectedService, vehicle.id))}
-              className={`fleet-card group overflow-hidden rounded-[22px] text-left shadow-sm ring-1 ring-border transition active:scale-[0.99] ${
-                index === 0 ? "col-span-2 bg-accent text-accent-foreground" : "bg-card text-primary"
-              }`}
-            >
-              <div className={`${index === 0 ? "h-44" : "h-32"} vehicle-stage relative overflow-hidden`}>
-                <div className="absolute inset-x-8 bottom-8 h-8 rounded-full bg-primary/15 blur-xl" />
-                <img
-                  src={vehicle.imageUrl}
-                  alt={`${vehicle.model} vehicle`}
-                  className={`absolute left-1/2 object-contain drop-shadow-2xl transition duration-500 group-hover:scale-105 ${
-                    index === 0
-                      ? "inset-y-4 h-[calc(100%-2rem)] w-[92%] -translate-x-1/2"
-                      : "inset-y-4 h-[calc(100%-2rem)] w-[95%] -translate-x-1/2"
-                  }`}
-                />
-                <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-xs font-extrabold text-primary shadow-sm">
-                  <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-                  {vehicle.rating}
-                </span>
-              </div>
-              <div className={index === 0 ? "p-5" : "p-4"}>
-                <p className="text-[10px] font-bold text-primary/60">{vehicle.capacity} passengers · {vehicle.luggageCapacity} bags</p>
-                <h2 className={index === 0 ? "mt-1 text-2xl font-extrabold text-primary" : "mt-1 text-lg font-extrabold text-primary"}>
-                  {vehicle.name}
-                </h2>
-                <p className="mt-1 text-xs font-bold text-muted-foreground">{vehicle.model}</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-lg font-extrabold text-primary">{selectedService === "Airport" ? `N${vehicle.airportWindhoekRate}` : "Get quote"}</span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <CarTaxiFront className="h-4 w-4" />
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
-        </section>
-      <section className="mt-6"><h2 className="text-lg font-extrabold text-primary">Popular destinations</h2><div className="mt-3 grid grid-cols-2 gap-3">{["Airport","City","Lodge","Safari"].map(service => <button key={service} onClick={() => navigate(bookingLink(service))} className="rounded-2xl bg-card p-4 text-left"><MapPin className="mb-3 h-5 w-5 text-accent" /><span className="block text-sm font-extrabold text-primary">{service === "Airport" ? "Hosea Kutako" : serviceDefaults[service].to}</span><span className="text-xs text-muted-foreground">{service} transfer</span></button>)}</div></section>
+        <Suspense fallback={<div className="mt-4 h-96 rounded-2xl bg-secondary" />}><HomeMap service={selectedService} /></Suspense>
       </main>
     </div>
   );

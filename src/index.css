@@ -278,3 +278,5 @@
     box-shadow: 0 0 0 14px hsl(var(--accent) / 0);
   }
 }
+.destination-map-pin { padding: 6px 10px; border: 1px solid white; border-radius: 12px; background: #102b3b; color: white; font-size: 11px; box-shadow: 0 2px 8px #0003; }
+.mapboxgl-ctrl-group { border-radius: 12px; overflow: hidden; }
