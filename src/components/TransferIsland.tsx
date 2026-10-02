@@ -3,7 +3,7 @@ import { CarTaxiFront, MessageCircle, Phone, WalletCards } from "lucide-react";
 
 export const TransferIsland = ({ compact = false }: { compact?: boolean }) => (
   <div
-    className={`rounded-[2rem] bg-[#05070b] p-3 text-white shadow-[0_18px_42px_rgba(0,0,0,0.45)] ring-1 ring-white/10 ${
+    className={`glass-dark rounded-[2rem] p-3 text-white ring-1 ring-white/20 ${
       compact ? "" : "animate-fade-up"
     }`}
   >

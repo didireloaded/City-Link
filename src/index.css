@@ -88,9 +88,10 @@
 
 @layer components {
   .glass {
-    background: hsl(0 0% 100% / 0.84);
-    backdrop-filter: blur(18px);
-    border: 1px solid hsl(var(--border) / 0.8);
+    background: hsl(0 0% 100% / 0.7);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid hsl(0 0% 100% / 0.85);
   }
 
   .card-elevated {
@@ -119,6 +120,96 @@
   .safe-page {
     min-height: 100vh;
     padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Surface-only treatment: preserve existing component geometry and hierarchy. */
+.safe-page.bg-background {
+  background: linear-gradient(145deg, #e5f2f9 0%, #f1f3f5 45%, #e8edf0 100%);
+}
+
+.bg-card,
+.bg-popover,
+.surface,
+.card-elevated,
+.glass,
+[role="dialog"][class~="bg-background"],
+[data-sonner-toast],
+[data-state][class~="bg-background"],
+.safe-page header {
+  background: hsl(var(--card) / 0.7);
+  border-color: rgb(255 255 255 / 0.85);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 4px 18px -8px rgb(24 43 55 / 0.16);
+}
+
+.bg-secondary,
+.bg-input,
+.safe-page input:not([type="checkbox"]):not([type="radio"]),
+.safe-page textarea,
+.safe-page select,
+.safe-page .field-control {
+  background: hsl(var(--secondary) / 0.55);
+  border-color: rgb(255 255 255 / 0.75);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
+}
+
+.safe-page.bg-primary {
+  background: linear-gradient(145deg, #102c3b, #101820 60%, #223c48);
+}
+
+.safe-page .bg-primary,
+.glass-dark {
+  background: hsl(var(--primary) / 0.7);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 8px 24px -12px rgb(10 20 29 / 0.3);
+}
+
+.safe-page :is(button, a, div).bg-accent {
+  background: hsl(var(--accent) / 0.7);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65), 0 5px 16px -10px hsl(var(--primary) / 0.3);
+}
+
+/* Native option popups need an opaque surface for dependable contrast. */
+.safe-page select option { background: hsl(var(--card)); color: hsl(var(--foreground)); }
+
+.citycab-glass-nav {
+  background: rgb(10 20 29 / 0.7);
+  border-color: rgb(255 255 255 / 0.28);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 8px 28px rgb(10 20 29 / 0.22);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bg-card, .bg-popover, .surface, .card-elevated, .glass, [role="dialog"][class~="bg-background"], [data-state][class~="bg-background"], [data-sonner-toast], .safe-page header {
+    background: hsl(var(--card) / 0.96);
+  }
+  .citycab-glass-nav { background: rgb(10 20 29 / 0.96); }
+  .safe-page .bg-primary, .glass-dark { background: hsl(var(--primary)); }
+  .safe-page :is(button, a, div).bg-accent { background: hsl(var(--accent)); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .bg-card, .bg-popover, .surface, .card-elevated, .glass, [role="dialog"][class~="bg-background"], [data-state][class~="bg-background"], [data-sonner-toast], .safe-page header {
+    background: hsl(var(--card));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .safe-page .bg-primary, .glass-dark { background: hsl(var(--primary)); }
+  .safe-page :is(button, a, div).bg-accent { background: hsl(var(--accent)); }
+  .bg-secondary, .bg-input, .safe-page .field-control { background: hsl(var(--secondary)); }
+  .safe-page *, .glass-dark { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .citycab-glass-nav {
+    background: #0a141d;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
