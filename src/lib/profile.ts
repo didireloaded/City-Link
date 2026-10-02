@@ -1,3 +1,8 @@
+/**
+ * Profile domain types. Persistence is server-side via the tRPC `profile`
+ * router — see src/hooks/useProfile.ts. No localStorage persistence.
+ */
+
 export interface Profile {
   name: string;
   phone: string;
@@ -22,53 +27,15 @@ export interface Profile {
   };
 }
 
-const KEY = "citycab_profile";
-
 export const defaultProfile: Profile = {
-  name: "Tangeni Shilongo",
-  phone: "+264 81 234 5678",
-  email: "tangeni.s@na.network",
-  walletBalanceNAD: 150,
-  loyaltyPoints: 420,
-  referralCode: "CITYCAB-TANGENI81",
-  referralsCount: 3,
-  savedPassengers: [
-    { id: "sp-1", name: "Tangeni Shilongo (Self)", phone: "+264 81 234 5678", relation: "Self", idNumber: "94051200381" },
-    { id: "sp-2", name: "Nangula Shilongo (Wife)", phone: "+264 81 444 9911", relation: "Spouse", idNumber: "96081100221" },
-    { id: "sp-3", name: "Johanna Shilongo (Mother)", phone: "+264 81 333 1188", relation: "Parent", idNumber: "65010100881" },
-  ],
-  savedRoutes: [
-    { from: "Home", to: "Hosea Kutako International Airport" },
-    { from: "Windhoek", to: "Swakopmund" },
-    { from: "Windhoek", to: "Etosha National Park" },
-  ],
+  name: "Traveler",
+  phone: "",
+  email: "",
+  walletBalanceNAD: 0,
+  loyaltyPoints: 0,
+  referralCode: "",
+  referralsCount: 0,
+  savedPassengers: [],
+  savedRoutes: [],
   preferences: { notifications: true, promoEmails: false, language: "en", smsReminders: true },
-};
-
-export const loadProfile = (): Profile => {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (!saved) return defaultProfile;
-    return {
-      ...defaultProfile,
-      ...saved,
-      walletBalanceNAD: saved.walletBalanceNAD ?? defaultProfile.walletBalanceNAD,
-      loyaltyPoints: saved.loyaltyPoints ?? defaultProfile.loyaltyPoints,
-      referralCode: saved.referralCode ?? defaultProfile.referralCode,
-      referralsCount: saved.referralsCount ?? defaultProfile.referralsCount,
-      savedPassengers: saved.savedPassengers ?? defaultProfile.savedPassengers,
-      savedRoutes: saved.savedRoutes ?? defaultProfile.savedRoutes,
-      preferences: { ...defaultProfile.preferences!, ...(saved.preferences || {}) },
-    };
-  } catch {
-    return defaultProfile;
-  }
-};
-
-export const saveProfile = (p: Profile) => {
-  localStorage.setItem(KEY, JSON.stringify(p));
-};
-
-export const clearProfile = () => {
-  localStorage.removeItem(KEY);
 };

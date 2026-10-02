@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TRIPS } from "@/data/trips";
+import { trpc } from "@/providers/trpc";
 import { TrendingUp, Users, Package, DollarSign, Star, Filter } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 
@@ -25,13 +26,17 @@ const Dashboard = () => {
   const revenue = TRIPS.reduce((s, t) => s + t.bookedSeats.length * t.price, 0);
   const occupancy = Math.round((booked / totalSeats) * 100);
 
-  const [reviews, setReviews] = useState<Review[]>(seedReviews);
   const [filter, setFilter] = useState<"all" | "low">("all");
-
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("citylink_reviews") || "[]");
-    if (stored.length) setReviews([...stored, ...seedReviews]);
-  }, []);
+  const reviewsQuery = trpc.bookings.recentReviews.useQuery();
+  const liveReviews: Review[] = (reviewsQuery.data ?? []).map((r) => ({
+    id: r.id,
+    trip: r.trip,
+    driver: r.driver,
+    service: r.service,
+    comment: r.comment,
+    at: r.at,
+  }));
+  const reviews = [...liveReviews, ...seedReviews];
 
   const filtered = filter === "low" ? reviews.filter((r) => r.driver <= 3 || r.service <= 3) : reviews;
   const avg = reviews.length ? (reviews.reduce((s, r) => s + (r.driver + r.service) / 2, 0) / reviews.length).toFixed(1) : "—";
@@ -116,7 +121,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-muted-foreground">Demo data — connect Cloud for real bookings, auth & roles.</p>
+        <p className="text-center text-[10px] text-muted-foreground">Network stats are illustrative; reviews include live customer ratings.</p>
       </div>
     </div>
   );

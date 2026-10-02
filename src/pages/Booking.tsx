@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AmenityIcon } from "@/components/Brand";
 import { TopBar } from "@/components/TopBar";
 import { PaymentGatewayModal } from "@/components/PaymentGatewayModal";
-import { loadProfile } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
+import { trpc } from "@/providers/trpc";
 import { createTransferOptions, LUGGAGE } from "@/data/trips";
 import { Baby, Check, Luggage, MapPin, MessageSquare, ShieldCheck, Sparkles, Star, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -33,7 +34,13 @@ export const Booking = () => {
   });
 
   const [step, setStep] = useState<Step>(1);
-  const [profile] = useState(() => loadProfile());
+  const { profile, save: saveProfile } = useProfile();
+  const utils = trpc.useUtils();
+  const createBooking = trpc.bookings.create.useMutation({
+    onSuccess: () => {
+      utils.bookings.listMine.invalidate();
+    },
+  });
   const [isGatewayOpen, setIsGatewayOpen] = useState<boolean>(false);
   const [payment] = useState<Payment>("card");
   const [childSeat, setChildSeat] = useState(false);
@@ -52,6 +59,15 @@ export const Booking = () => {
     };
   });
 
+  useEffect(() => {
+    if (!profile.name && !profile.phone) return;
+    setForm((current) => {
+      if (current.name || current.phone) return current;
+      const [firstName = "", surname = ""] = String(profile.name || "").split(" ");
+      return { ...current, name: firstName, surname, phone: profile.phone || current.phone, email: profile.email || current.email };
+    });
+  }, [profile.name, profile.phone, profile.email]);
+
   const luggage = LUGGAGE.find((item) => item.id === "checked") || LUGGAGE[0];
   const serviceFee = trip.quoteOnly ? 0 : 25;
   const subtotal = trip.quoteOnly ? 0 : trip.price;
@@ -63,10 +79,7 @@ export const Booking = () => {
         toast.error("Please add passenger contact details.");
         return;
       }
-      localStorage.setItem(
-        "citycab_profile",
-        JSON.stringify({ name: `${form.name} ${form.surname}`, phone: form.phone, email: form.email })
-      );
+      void saveProfile({ phone: form.phone });
     }
     setStep((current) => (current + 1) as Step);
   };
@@ -278,12 +291,38 @@ export const Booking = () => {
         onOpenChange={setIsGatewayOpen}
         amountNAD={total}
         description={`${trip.bus.name} · ${shortPlace(trip.from)} to ${shortPlace(trip.to)}`}
-        onSuccess={(method, ref) => {
-          setIsGatewayOpen(false);
-          const name = encodeURIComponent(`${form.name} ${form.surname}`.trim());
-          navigate(
-            `/confirmation?ref=${ref}&trip=${trip.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&vehicle=${encodeURIComponent(trip.bus.name)}&total=${total}&name=${name}&payment=${encodeURIComponent(method || payment)}&date=${travelDate}&pickup=${encodeURIComponent(pickup)}&pickupTime=${pickupTime}`
-          );
+        onSuccess={async (method, ref) => {
+          try {
+            const booking = await createBooking.mutateAsync({
+              tripId: trip.id,
+              service: trip.serviceType || "City Transfer",
+              vehicle: trip.bus.name,
+              fromLocation: from,
+              toLocation: to,
+              pickup,
+              dropoff,
+              travelDate,
+              pickupTime,
+              passengers: passengerCount,
+              passengerName: `${form.name} ${form.surname}`.trim(),
+              passengerPhone: form.phone,
+              passengerEmail: form.email || null,
+              luggage: Number(form.luggage) || 0,
+              childSeat,
+              flightNumber: form.flightNumber || null,
+              notes: form.notes || null,
+              amountNad: total,
+              paymentMethod: method || payment,
+            });
+            setIsGatewayOpen(false);
+            const name = encodeURIComponent(`${form.name} ${form.surname}`.trim());
+            navigate(
+              `/confirmation?ref=${booking.reference}&payref=${encodeURIComponent(ref)}&trip=${trip.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&vehicle=${encodeURIComponent(trip.bus.name)}&total=${total}&name=${name}&payment=${encodeURIComponent(method || payment)}&date=${travelDate}&pickup=${encodeURIComponent(pickup)}&pickupTime=${pickupTime}`
+            );
+          } catch (error) {
+            setIsGatewayOpen(false);
+            toast.error(error instanceof Error ? error.message : "Booking failed. Please try again.");
+          }
         }}
       />
     </div>

@@ -87,7 +87,7 @@ export const RouteMap = () => {
 
   // Calculate simulated bus coordinates along the pathCoords
   const coords = selectedRoute.pathCoords;
-  const getSimCoord = () => {
+  const getSimCoord = (): { x: number; y: number; currentTown?: string } => {
     if (coords.length < 2) return coords[0] || { x: 50, y: 50 };
     const idxFloat = (simProgress / 100) * (coords.length - 1);
     const idx = Math.floor(idxFloat);
@@ -122,7 +122,7 @@ export const RouteMap = () => {
       setNotifications((prev) => [
         {
           id: Math.random().toString(),
-          town: simBus.currentTown,
+          town: simBus.currentTown ?? "En route",
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           desc,
           isStop,

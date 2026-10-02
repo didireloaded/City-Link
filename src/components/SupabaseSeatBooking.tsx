@@ -1,17 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
-import { CircleUser, Clock, ShieldCheck, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CircleUser, Clock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-
-const supabase =
-  supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
-
-const HOLD_MINUTES = 10;
+import { trpc } from "@/providers/trpc";
 
 const DISCOUNTS: Record<string, number> = {
   regular: 0,
@@ -25,30 +15,59 @@ export interface SeatItem {
   seat_type: string;
 }
 
-interface SupabaseSeatBookingProps {
+interface SeatBookingProps {
   tripId: string;
   routePrice: number;
-  userId?: string;
+  travelDate?: string;
   onSeatSelected?: (seatNumber: string, finalPrice: number, heldUntil?: string) => void;
 }
+
+/** 49-seat layout: 12 rows of 4 + final pair (A/B only). Deterministic and shared with the server contract. */
+function generateSeats(): SeatItem[] {
+  const list: SeatItem[] = [];
+  const letters = ["A", "B", "C", "D"];
+  for (let r = 1; r <= 13; r++) {
+    for (const s of letters) {
+      if (!(r === 13 && (s === "C" || s === "D"))) {
+        list.push({
+          id: `seat-${r}${s}`,
+          seat_number: `${r}${s}`,
+          seat_type: s === "A" || s === "D" ? "window" : "aisle",
+        });
+      }
+    }
+  }
+  return list;
+}
+
+const SEATS = generateSeats();
 
 export const SupabaseSeatBooking = ({
   tripId,
   routePrice,
-  userId = "demo-user-id",
+  travelDate,
   onSeatSelected,
-}: SupabaseSeatBookingProps) => {
-  const [seats, setSeats] = useState<SeatItem[]>([]);
-  const [taken, setTaken] = useState<Set<string>>(new Set());
+}: SeatBookingProps) => {
+  const date = travelDate ?? new Date().toISOString().slice(0, 10);
+  const utils = trpc.useUtils();
+
+  const availability = trpc.bookings.availability.useQuery(
+    { tripId, travelDate: date },
+    { refetchInterval: 30_000 },
+  );
+  const holdSeat = trpc.bookings.holdSeat.useMutation();
+
   const [selected, setSelected] = useState<SeatItem | null>(null);
   const [passengerType, setPassengerType] = useState<string>("regular");
   const [passengerName, setPassengerName] = useState<string>("");
   const [returnTicket, setReturnTicket] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [heldUntilTime, setHeldUntilTime] = useState<Date | null>(null);
   const [timeLeftSec, setTimeLeftSec] = useState<number>(0);
+
+  const taken = new Set(
+    (availability.data?.taken ?? []).map((seatNumber) => `seat-${seatNumber}`),
+  );
 
   // Countdown timer for seat hold
   useEffect(() => {
@@ -62,103 +81,17 @@ export const SupabaseSeatBooking = ({
       if (diff === 0) {
         setHeldUntilTime(null);
         toast.error("Seat hold expired. Please select again.");
+        utils.bookings.availability.invalidate({ tripId, travelDate: date });
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [heldUntilTime]);
-
-  // Generate fallback 49-seat layout (13 rows x 4 = 52, row 13 trimmed to A/B only)
-  const generateFallbackSeats = useCallback((): SeatItem[] => {
-    const list: SeatItem[] = [];
-    const letters = ["A", "B", "C", "D"];
-    for (let r = 1; r <= 13; r++) {
-      for (const s of letters) {
-        if (!(r === 13 && (s === "C" || s === "D"))) {
-          list.push({
-            id: `seat-${r}${s}`,
-            seat_number: `${r}${s}`,
-            seat_type: s === "A" || s === "D" ? "window" : "aisle",
-          });
-        }
-      }
-    }
-    return list;
-  }, []);
-
-  const loadSeats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    // If Supabase is connected, fetch live schema table data
-    if (supabase) {
-      try {
-        const { data: trip, error: tripErr } = await supabase
-          .from("trips")
-          .select("bus_id")
-          .eq("id", tripId)
-          .single();
-
-        if (tripErr || !trip) {
-          console.warn("Trip not found on network, using local coach seating schedule.");
-          setSeats(generateFallbackSeats());
-          setTaken(new Set(["seat-1A", "seat-2B", "seat-3C", "seat-4D", "seat-6A", "seat-8B"]));
-          setLoading(false);
-          return;
-        }
-
-        const { data: seatRows, error: seatErr } = await supabase
-          .from("seats")
-          .select("id, seat_number, seat_type")
-          .eq("bus_id", trip.bus_id)
-          .order("seat_number");
-
-        const { data: bookingRows, error: bookingErr } = await supabase
-          .from("bookings")
-          .select("seat_id, status, held_until")
-          .eq("trip_id", tripId)
-          .in("status", ["held", "confirmed"]);
-
-        if (seatErr || bookingErr) {
-          setError("Couldn't check live seat availability.");
-          setLoading(false);
-          return;
-        }
-
-        const now = new Date();
-        const takenIds = new Set<string>(
-          (bookingRows || [])
-            .filter(
-              (b: any) =>
-                b.status === "confirmed" ||
-                (b.status === "held" && new Date(b.held_until) > now)
-            )
-            .map((b: any) => b.seat_id)
-        );
-
-        setSeats(seatRows || []);
-        setTaken(takenIds);
-        setLoading(false);
-        return;
-      } catch (err) {
-        console.warn("Supabase fetch failed, falling back to local simulation:", err);
-      }
-    }
-
-    // Fallback standalone mode
-    setSeats(generateFallbackSeats());
-    setTaken(new Set(["seat-1A", "seat-2B", "seat-3C", "seat-4D", "seat-6A", "seat-8B"]));
-    setLoading(false);
-  }, [tripId, generateFallbackSeats]);
-
-  useEffect(() => {
-    loadSeats();
-  }, [loadSeats]);
+  }, [heldUntilTime, tripId, date, utils]);
 
   const discountPercent = DISCOUNTS[passengerType] + (returnTicket ? 6 : 0);
   const finalPrice = Math.round(routePrice * (1 - discountPercent / 100));
 
   function handleSelectSeat(seat: SeatItem) {
-    if (taken.has(seat.id) || submitting) return;
+    if (taken.has(seat.id) || holdSeat.isPending) return;
     setSelected(seat);
     setError(null);
   }
@@ -175,62 +108,33 @@ export const SupabaseSeatBooking = ({
       return;
     }
 
-    setSubmitting(true);
     setError(null);
-
-    const heldUntil = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
-
-    if (supabase) {
-      const { data, error: insertErr } = await supabase
-        .from("bookings")
-        .insert({
-          trip_id: tripId,
-          user_id: userId,
-          seat_id: selected.id,
-          passenger_name: passengerName.trim(),
-          passenger_type: passengerType,
-          discount_applied: discountPercent,
-          price_paid: finalPrice,
-          status: "held",
-          held_until: heldUntil.toISOString(),
-        })
-        .select()
-        .single();
-
-      if (insertErr) {
-        if (insertErr.code === "23505") {
-          setError("That seat was just taken by another passenger. Pick another.");
-          await loadSeats();
-          setSelected(null);
-        } else {
-          setError("Couldn't hold that seat right now. Try again.");
-        }
-        setSubmitting(false);
-        return;
-      }
-
+    try {
+      const result = await holdSeat.mutateAsync({
+        tripId,
+        travelDate: date,
+        seatNumber: selected.seat_number,
+        passengerName: passengerName.trim(),
+        passengerType,
+        priceNad: finalPrice,
+      });
+      const heldUntil = new Date(result.heldUntil);
       setHeldUntilTime(heldUntil);
-      setSubmitting(false);
-      toast.success(`Seat ${selected.seat_number} held for ${HOLD_MINUTES} minutes!`);
-      if (onSeatSelected) onSeatSelected(selected.seat_number, finalPrice, heldUntil.toISOString());
-      return;
+      toast.success(`Seat ${selected.seat_number} held for 10 minutes!`);
+      onSeatSelected?.(selected.seat_number, finalPrice, heldUntil.toISOString());
+      utils.bookings.availability.invalidate({ tripId, travelDate: date });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't hold that seat right now. Try again.");
+      setSelected(null);
+      utils.bookings.availability.invalidate({ tripId, travelDate: date });
     }
-
-    // Standalone simulation confirm
-    setTimeout(() => {
-      setTaken((prev) => new Set([...prev, selected.id]));
-      setHeldUntilTime(heldUntil);
-      setSubmitting(false);
-      toast.success(`Seat ${selected.seat_number} locked & held for ${HOLD_MINUTES} min!`);
-      if (onSeatSelected) onSeatSelected(selected.seat_number, finalPrice, heldUntil.toISOString());
-    }, 400);
   }
 
-  if (loading) {
+  if (availability.isLoading) {
     return <div className="p-8 text-center text-xs font-bold text-muted-foreground">Loading 49-seat luxury diagram...</div>;
   }
 
-  const rows = groupIntoRows(seats);
+  const rows = groupIntoRows(SEATS);
 
   return (
     <div className="mx-auto max-w-md space-y-5 rounded-3xl border border-border bg-card p-5 shadow-sm">
@@ -283,88 +187,89 @@ export const SupabaseSeatBooking = ({
             <span className="h-3.5 w-3.5 rounded bg-card border border-primary" /> Available
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-3.5 w-3.5 rounded bg-accent shadow-[var(--shadow-glow)]" /> Selected
+            <span className="h-3.5 w-3.5 rounded bg-accent border border-accent" /> Selected
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-3.5 w-3.5 rounded bg-destructive/30 border border-destructive line-through" /> Taken
+            <span className="h-3.5 w-3.5 rounded bg-muted-foreground/40 border border-muted-foreground/40" /> Occupied
           </div>
         </div>
       </div>
 
-      {/* Passenger Name & Discount Options */}
-      <div className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+      {/* Passenger & Pricing */}
+      <div className="space-y-3.5">
         <label className="block">
-          <span className="text-[10px] font-extrabold uppercase text-muted-foreground">
-            Passenger Full Name
-          </span>
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Passenger Full Name</span>
           <input
-            type="text"
-            placeholder="e.g. Haikali Ndatulumukwa"
             value={passengerName}
             onChange={(e) => setPassengerName(e.target.value)}
-            className="mt-1 h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-bold outline-none focus:border-accent"
+            placeholder="e.g. Tangeni Shilongo"
+            className="mt-1 h-12 w-full rounded-xl border border-border bg-input px-3.5 text-xs font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <label className="block">
-            <span className="text-[10px] font-extrabold uppercase text-muted-foreground">
-              Passenger Fare Type
-            </span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Passenger Type</span>
             <select
               value={passengerType}
               onChange={(e) => setPassengerType(e.target.value)}
-              className="mt-1 h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-bold text-primary outline-none focus:border-accent"
+              className="mt-1 h-12 w-full rounded-xl border border-border bg-input px-3 text-xs font-bold capitalize outline-none focus:border-accent"
             >
-              <option value="regular">Regular Fare (N${routePrice})</option>
-              <option value="student">Student (5% off)</option>
-              <option value="senior">Senior Citizen (8% off)</option>
+              <option value="regular">Regular</option>
+              <option value="student">Student (−5%)</option>
+              <option value="senior">Senior 60+ (−8%)</option>
             </select>
           </label>
-
-          <label className="flex flex-col justify-end">
-            <div
-              onClick={() => setReturnTicket(!returnTicket)}
-              className={`flex h-11 cursor-pointer items-center justify-between rounded-xl border px-3 text-xs font-extrabold transition-all ${
-                returnTicket ? "border-accent bg-accent/15 text-primary" : "border-border bg-card text-muted-foreground"
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5 text-accent" /> Return (-6%)
-              </span>
-              <input type="checkbox" checked={returnTicket} onChange={() => {}} className="accent-accent" />
-            </div>
-          </label>
+          <button
+            type="button"
+            onClick={() => setReturnTicket(!returnTicket)}
+            className={`mt-5 h-12 rounded-xl border text-xs font-extrabold transition-all ${
+              returnTicket
+                ? "border-accent bg-accent/15 text-accent"
+                : "border-border bg-card text-muted-foreground"
+            }`}
+          >
+            Return Ticket {returnTicket ? "−6% Applied" : "(Save 6%)"}
+          </button>
         </div>
 
-        <div className="flex items-baseline justify-between border-t border-border pt-3">
-          <span className="text-xs font-bold text-muted-foreground">
-            {selected ? `Seat ${selected.seat_number} Locked` : "No seat selected"}
+        <div className="flex items-center justify-between rounded-2xl bg-secondary/60 p-3.5">
+          <span className="text-xs font-extrabold text-muted-foreground">
+            Seat {selected ? selected.seat_number : "—"} · {discountPercent}% off
           </span>
-          <div className="text-right">
-            <span className="text-2xl font-extrabold text-primary">N${finalPrice}</span>
-            {discountPercent > 0 && (
-              <span className="ml-2 text-xs font-bold text-success">
-                (-{discountPercent}%)
-              </span>
-            )}
-          </div>
+          <span className="text-lg font-extrabold text-primary">N${finalPrice}</span>
         </div>
 
-        {error && <p className="text-xs font-bold text-destructive">{error}</p>}
+        {error && (
+          <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs font-extrabold text-destructive">
+            {error}
+          </p>
+        )}
 
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={submitting || !selected}
-          className="h-12 w-full rounded-xl bg-accent text-xs font-extrabold text-accent-foreground shadow-[var(--shadow-glow)] transition-transform active:scale-95 disabled:opacity-50"
+          disabled={!selected || holdSeat.isPending}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground shadow-[var(--shadow-elegant)] active:scale-[0.98] disabled:opacity-50 transition-transform"
         >
-          {submitting ? "Holding seat..." : `Hold Seat ${selected?.seat_number || ""} for ${HOLD_MINUTES} min`}
+          <ShieldCheck className="h-4 w-4 text-accent" />
+          {holdSeat.isPending ? "Holding seat…" : selected ? `Hold Seat ${selected.seat_number}` : "Select a Seat"}
         </button>
       </div>
     </div>
   );
 };
+
+function groupIntoRows(seats: SeatItem[]): SeatItem[][] {
+  const rows: SeatItem[][] = [];
+  for (let i = 0; i < seats.length; i += 4) {
+    rows.push(seats.slice(i, i + 4));
+  }
+  // Final row has only seats A/B — pad for layout
+  const last = rows[rows.length - 1];
+  while (last.length < 4) last.push(undefined as unknown as SeatItem);
+  return rows;
+}
 
 const SeatButton = ({
   seat,
@@ -372,47 +277,31 @@ const SeatButton = ({
   selected,
   onSelect,
 }: {
-  seat?: SeatItem;
+  seat: SeatItem | undefined;
   taken: Set<string>;
   selected: SeatItem | null;
-  onSelect: (s: SeatItem) => void;
+  onSelect: (seat: SeatItem) => void;
 }) => {
-  if (!seat) return <div className="h-9 w-9" />;
-
+  if (!seat) return <div className="h-10 w-10" />;
   const isTaken = taken.has(seat.id);
   const isSelected = selected?.id === seat.id;
-
   return (
     <button
       type="button"
-      onClick={() => onSelect(seat)}
       disabled={isTaken}
-      title={`Seat ${seat.seat_number} (${seat.seat_type})`}
-      className={`h-9 w-9 rounded-lg border text-[11px] font-extrabold transition-all ${
+      onClick={() => onSelect(seat)}
+      title={`Seat ${seat.seat_number} · ${seat.seat_type}`}
+      className={`flex h-11 w-11 items-center justify-center rounded-xl text-[10px] font-extrabold transition-all active:scale-95 ${
         isTaken
-          ? "bg-destructive/20 text-destructive border-transparent cursor-not-allowed line-through opacity-70"
+          ? "cursor-not-allowed bg-muted-foreground/40 text-white/70"
           : isSelected
-          ? "bg-accent text-accent-foreground border-accent shadow-[var(--shadow-glow)] scale-105"
-          : "bg-card text-primary border-primary/40 hover:border-accent hover:scale-105 shadow-2xs"
+          ? "bg-accent text-accent-foreground shadow-[var(--shadow-glow)] ring-2 ring-accent/50"
+          : "bg-card text-primary border border-primary/30 hover:border-accent"
       }`}
     >
       {seat.seat_number}
     </button>
   );
 };
-
-// Group into rows of 4 [A, B, C, D] honoring the last-row C & D exception
-function groupIntoRows(seats: SeatItem[]): (SeatItem | undefined)[][] {
-  const byRow: Record<string, Record<string, SeatItem>> = {};
-  seats.forEach((s) => {
-    const rowNum = s.seat_number.slice(0, -1);
-    const letter = s.seat_number.slice(-1);
-    byRow[rowNum] = byRow[rowNum] || {};
-    byRow[rowNum][letter] = s;
-  });
-  return Object.keys(byRow)
-    .sort((x, y) => Number(x) - Number(y))
-    .map((r) => [byRow[r].A, byRow[r].B, byRow[r].C, byRow[r].D]);
-}
 
 export default SupabaseSeatBooking;

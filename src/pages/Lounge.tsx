@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { TopBar } from "@/components/TopBar";
-import { loadProfile } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
 import {
   Wifi,
   Coffee,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 export const Lounge = () => {
-  const profile = loadProfile();
+  const { profile } = useProfile();
   const [selectedCity, setSelectedCity] = useState<string>("all");
 
   const locations = [

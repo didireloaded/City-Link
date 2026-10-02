@@ -3,7 +3,7 @@ import { bookingLink, serviceDefaults } from "@/lib/transfer-service";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, CarTaxiFront, MapPin, Search, SlidersHorizontal, Star } from "lucide-react";
 import { Logo } from "@/components/Brand";
-import { loadProfile } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { VEHICLE_CATEGORIES } from "@/data/trips";
 
 const SERVICES = ["All", "Airport", "City", "Lodge", "Safari"];
@@ -13,7 +13,7 @@ export const Index = () => {
   const [selectedService, setSelectedService] = useState("All");
   const [passengers, setPassengers] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const profile = loadProfile();
+  const { profile } = useProfile();
   const firstName = profile.name && profile.name !== "Guest user" ? profile.name.split(" ")[0] : "Traveler";
   const homeFleet = VEHICLE_CATEGORIES.filter((vehicle) => (selectedService === "All" ? ["sedan", "compact-suv", "suv"] : serviceDefaults[selectedService].vehicles).includes(vehicle.id) && vehicle.capacity >= passengers);
 

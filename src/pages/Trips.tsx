@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { RatingModal } from "@/components/RatingModal";
 import { ArrowRight, BellRing, Calendar, CarTaxiFront, MessageCircle, Phone, RotateCw, Star, Wallet, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { loadProfile, saveProfile } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
+import { trpc } from "@/providers/trpc";
+import type { Booking } from "@db/schema";
 
 interface BookedTransfer {
-  id: string;
+  id: number;
   ref: string;
   service: string;
   pickup: string;
@@ -21,56 +23,57 @@ interface BookedTransfer {
   rated?: boolean;
 }
 
-const seed: BookedTransfer[] = [
-  {
-    id: "1",
-    ref: "WCC-2407",
-    service: "Airport Transfer",
-    pickup: "Hosea Kutako Arrivals Hall",
-    destination: "Windhoek West",
-    vehicle: "SUV",
-    amount: 900,
-    date: new Date(Date.now() + 86400000).toISOString(),
-    time: "14:30",
-    status: "upcoming",
-    driverState: "Driver assigned",
-    paymentState: "Paid",
-  },
-  {
-    id: "2",
-    ref: "WCC-1904",
-    service: "City Transfer",
-    pickup: "Hilton Windhoek",
-    destination: "Eros Airport",
-    vehicle: "Sedan",
-    amount: 0,
-    date: new Date(Date.now() - 86400000 * 3).toISOString(),
-    time: "09:00",
-    status: "completed",
-    driverState: "Completed",
-    paymentState: "Settled",
-  },
-];
+function toViewModel(booking: Booking): BookedTransfer {
+  const statusMap: Record<string, BookedTransfer["status"]> = {
+    confirmed: "upcoming",
+    held: "upcoming",
+    dispatched: "active",
+    completed: "completed",
+    cancelled: "cancelled",
+  };
+  return {
+    id: booking.id,
+    ref: booking.reference,
+    service: booking.service,
+    pickup: booking.pickup || booking.fromLocation,
+    destination: booking.dropoff || booking.toLocation,
+    vehicle: booking.vehicle,
+    amount: booking.amountNad,
+    date: booking.travelDate,
+    time: booking.pickupTime,
+    status: statusMap[booking.status] ?? "upcoming",
+    driverState: booking.driverName ? `Driver: ${booking.driverName}` : "Driver assignment pending",
+    paymentState: booking.paymentMethod ? "Paid" : "Unpaid",
+    rated: booking.rating !== null,
+  };
+}
 
 const tabs = ["upcoming", "active", "completed", "cancelled"] as const;
 
 const Trips = () => {
   const [tab, setTab] = useState<BookedTransfer["status"]>("upcoming");
-  const [bookings, setBookings] = useState(seed);
   const [rating, setRating] = useState<BookedTransfer | null>(null);
   const [cancelTarget, setCancelTarget] = useState<BookedTransfer | null>(null);
-  const [profile, setProfile] = useState(() => loadProfile());
+  const { profile, refresh: refreshProfile } = useProfile();
 
+  const utils = trpc.useUtils();
+  const bookingsQuery = trpc.bookings.listMine.useQuery();
+  const cancelMutation = trpc.bookings.cancel.useMutation();
+  const rateMutation = trpc.bookings.rate.useMutation();
+
+  const bookings = (bookingsQuery.data ?? []).map(toViewModel);
   const list = bookings.filter((booking) => booking.status === tab);
 
-  const executeCancel = () => {
+  const executeCancel = async () => {
     if (!cancelTarget) return;
-    setBookings((items) => items.map((item) => item.id === cancelTarget.id ? { ...item, status: "cancelled" } : item));
-    const updatedBalance = (profile.walletBalanceNAD || 0) + cancelTarget.amount;
-    const updatedProfile = { ...profile, walletBalanceNAD: updatedBalance };
-    saveProfile(updatedProfile);
-    setProfile(updatedProfile);
-    toast.success(`Transfer #${cancelTarget.ref} cancelled. N$${cancelTarget.amount} credited to your wallet.`);
+    try {
+      await cancelMutation.mutateAsync({ id: cancelTarget.id });
+      await utils.bookings.listMine.invalidate();
+      await refreshProfile();
+      toast.success(`Transfer #${cancelTarget.ref} cancelled. N$${cancelTarget.amount} credited to your wallet.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Cancellation failed.");
+    }
     setCancelTarget(null);
   };
 
@@ -112,14 +115,20 @@ const Trips = () => {
                 Active
               </span>
             </div>
-            <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
-              City Cab will share driver, vehicle and ETA updates before pickup.
+            <p className="mt-1 text-xs font-semibold text-muted-foreground leading-relaxed">
+              City Link will share driver, vehicle and ETA updates before pickup.
             </p>
           </div>
         )}
 
         <div className="mt-4 space-y-4">
-          {list.length === 0 && (
+          {bookingsQuery.isLoading && (
+            <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
+              <p className="text-sm font-semibold text-muted-foreground">Loading your transfers…</p>
+            </div>
+          )}
+
+          {!bookingsQuery.isLoading && list.length === 0 && (
             <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
               <CarTaxiFront className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
               <p className="text-sm font-semibold text-muted-foreground">No {tab} transfers yet.</p>
@@ -168,7 +177,7 @@ const Trips = () => {
                       <Phone className="h-3.5 w-3.5 text-accent" /> Contact Driver
                     </a>
                     <a href="https://wa.me/264812572188" target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-success/30 bg-success/10 text-xs font-extrabold text-success active:scale-95 transition-transform">
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp City Cab
+                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp City Link
                     </a>
                     <button onClick={() => setCancelTarget(booking)} className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 text-xs font-extrabold text-destructive active:scale-95 transition-all">
                       <XCircle className="h-3.5 w-3.5" /> Cancel
@@ -176,12 +185,12 @@ const Trips = () => {
                   </div>
                 ) : (
                   <div className="mt-4 grid grid-cols-2 gap-2">
-                    {!booking.rated && (
+                    {booking.status === "completed" && !booking.rated && (
                       <button onClick={() => setRating(booking)} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent text-sm font-extrabold text-accent-foreground">
                         <Star className="h-4 w-4" /> Rate
                       </button>
                     )}
-                    <Link to={`/results?from=${booking.pickup}&to=${booking.destination}&date=${new Date().toISOString().slice(0, 10)}&passengers=1&tripType=one-way`} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">
+                    <Link to={`/results?from=${encodeURIComponent(booking.pickup)}&to=${encodeURIComponent(booking.destination)}&date=${new Date().toISOString().slice(0, 10)}&passengers=1&tripType=one-way`} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">
                       <RotateCw className="h-4 w-4" /> Book Again
                     </Link>
                   </div>
@@ -197,14 +206,14 @@ const Trips = () => {
           <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-5 shadow-xl space-y-4">
             <h3 className="text-base font-extrabold text-destructive">Cancel Transfer</h3>
             <p className="text-xs font-semibold text-muted-foreground">
-              Cancel transfer #{cancelTarget.ref}. Any paid amount shown in this demo is returned to your wallet.
+              Cancel transfer #{cancelTarget.ref}. The paid amount of N${cancelTarget.amount} is returned to your wallet.
             </p>
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button type="button" onClick={() => setCancelTarget(null)} className="h-11 rounded-xl bg-secondary text-xs font-extrabold text-muted-foreground">
                 Keep Transfer
               </button>
-              <button type="button" onClick={executeCancel} className="h-11 rounded-xl bg-destructive text-xs font-extrabold text-destructive-foreground shadow-sm">
-                Cancel
+              <button type="button" onClick={executeCancel} disabled={cancelMutation.isPending} className="h-11 rounded-xl bg-destructive text-xs font-extrabold text-destructive-foreground shadow-sm disabled:opacity-50">
+                {cancelMutation.isPending ? "Cancelling…" : "Cancel"}
               </button>
             </div>
           </div>
@@ -213,10 +222,21 @@ const Trips = () => {
 
       <RatingModal
         open={!!rating}
-        onOpenChange={(open) => !open && setRating(null)}
-        tripLabel={rating ? `${rating.pickup} to ${rating.destination}` : "City Cab Transfer"}
-        onSubmitted={() => {
-          if (rating) setBookings((items) => items.map((item) => item.id === rating.id ? { ...item, rated: true } : item));
+        onClose={() => setRating(null)}
+        tripLabel={rating ? `${rating.pickup} to ${rating.destination}` : "City Link Transfer"}
+        onSubmit={async ({ driver, service, comment }) => {
+          if (!rating) return;
+          try {
+            await rateMutation.mutateAsync({
+              id: rating.id,
+              rating: Math.round((driver + service) / 2),
+              comment: comment || undefined,
+            });
+            await utils.bookings.listMine.invalidate();
+            toast.success("Thanks for your feedback");
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not save your rating.");
+          }
           setRating(null);
         }}
       />

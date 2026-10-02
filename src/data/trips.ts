@@ -78,7 +78,7 @@ export const CITY_LINK_INFO = {
     address: "17 Hahnemann Street, Windhoek West, Namibia",
   },
   operatingNote: "Airport, city, lodge, safari, executive and staff transport available by private booking.",
-  discounts: [],
+  discounts: [] as { type: string; label: string; percent: number }[],
   offices: [{ city: "Windhoek", address: "17 Hahnemann Street, Windhoek West, Namibia" }],
 };
 

@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { Armchair, CarTaxiFront, Droplets, Luggage, MapPin, ShieldCheck, Snowflake, UserCheck, Wifi, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 

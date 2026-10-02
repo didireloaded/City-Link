@@ -1,166 +1,100 @@
-import { useState, useEffect } from "react";
-import { supabase, STATUS_STEPS, getParcelFromSupabaseOrLocal, confirmParcelHandover, logParcelEvent, type SupabaseParcelStatus } from "@/lib/parcels";
-import { Package, Search, Radio, CheckCircle2, Truck, RefreshCw, ShieldCheck, MapPin, Clock, PlusCircle, Lock, Check, Bell, Navigation } from "lucide-react";
+import { useState } from "react";
+import { STATUS_STEPS, type ParcelStatus } from "@/lib/parcels";
+import { Package, Search, RefreshCw, CheckCircle2, ShieldCheck, MapPin, Check, Bell, Navigation, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/providers/trpc";
 
 export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: string }) {
   const [code, setCode] = useState(initialCode);
-  const [parcel, setParcel] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [realtimeActive, setRealtimeActive] = useState(false);
+  const [activeCode, setActiveCode] = useState(initialCode);
+  const utils = trpc.useUtils();
+
+  const trackQuery = trpc.parcels.track.useQuery(
+    { code: activeCode },
+    { enabled: activeCode.trim().length >= 3, retry: false },
+  );
+
+  const logEvent = trpc.parcels.logEvent.useMutation();
+  const confirmHandover = trpc.parcels.confirmHandover.useMutation();
 
   // Staff simulation state for logging quick events
   const [showStaffActions, setShowStaffActions] = useState(false);
-  const [staffStatus, setStaffStatus] = useState<SupabaseParcelStatus>("in_transit");
+  const [staffStatus, setStaffStatus] = useState<ParcelStatus>("in_transit");
   const [staffLocation, setStaffLocation] = useState("Otjiwarongo B1 Checkpoint");
   const [staffNote, setStaffNote] = useState("Coach clear, moving on schedule");
 
-  async function trackParcelByCode(targetCode: string) {
-    if (!targetCode.trim()) return;
+  const result = trackQuery.data ?? null;
+  const loading = trackQuery.isFetching || logEvent.isPending || confirmHandover.isPending;
 
-    setLoading(true);
-    setError(null);
-
-    const cleanCode = targetCode.trim().toUpperCase();
-
-    if (supabase) {
-      try {
-        const { data: parcelData, error: parcelErr } = await supabase
-          .from("public_parcel_tracking")
-          .select("*")
-          .eq("tracking_code", cleanCode)
-          .single();
-
-        if (!parcelErr && parcelData) {
-          const { data: eventData } = await supabase
-            .from("parcel_events")
-            .select("status, location, note, created_at, parcels!inner(tracking_code)")
-            .eq("parcels.tracking_code", parcelData.tracking_code)
-            .order("created_at", { ascending: true });
-
-          setParcel(parcelData);
-          setEvents(eventData || []);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.warn("Supabase view query fallback:", e);
+  // Map the server model to the display model used below.
+  const parcel = result
+    ? {
+        tracking_code: result.parcel.trackingCode,
+        origin_office: result.parcel.originOffice,
+        destination_office: result.parcel.destinationOffice,
+        status: result.parcel.status as ParcelStatus,
+        current_location: result.parcel.currentLocation,
+        description: result.parcel.description || `${result.parcel.size} (${result.parcel.weightKg}kg)`,
+        created_at: result.parcel.createdAt,
+        receiverConfirmed: Boolean(result.parcel.receiverConfirmedAt),
+        senderConfirmed: Boolean(result.parcel.senderConfirmedAt),
+        price: result.parcel.priceNad,
+        isOwner: result.isOwner,
       }
-    }
+    : null;
 
-    // Fallback or simulation lookup
-    const local = await getParcelFromSupabaseOrLocal(cleanCode);
-    if (local) {
-      setParcel({
-        tracking_code: local.trackingCode || local.id,
-        origin_office: local.from,
-        destination_office: local.to,
-        status: local.status,
-        current_location: local.currentLocation,
-        description: local.description || `${local.type} (${local.weight}kg)`,
-        created_at: local.createdAt,
-        receiverConfirmed: local.receiverConfirmed,
-        senderConfirmed: local.senderConfirmed,
-        price: local.price,
-      });
-      setEvents(
-        (local.events || []).map((e) => ({
-          status: e.status || "dropped_off",
-          location: e.location || local.currentLocation,
-          note: e.note || "Logged event",
-          created_at: e.at,
-        }))
-      );
-      setLoading(false);
-    } else {
-      setError("No parcel found with that tracking code.");
-      setParcel(null);
-      setEvents([]);
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (initialCode) {
-      trackParcelByCode(initialCode);
-    }
-  }, [initialCode]);
-
-  // Subscribe to live Supabase updates once we have a parcel loaded
-  useEffect(() => {
-    if (!supabase || !parcel?.tracking_code) {
-      setRealtimeActive(false);
-      return;
-    }
-
-    const trackingCode = parcel.tracking_code;
-    const channel = supabase
-      .channel(`live-parcel-${trackingCode}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "parcels", filter: `tracking_code=eq.${trackingCode}` },
-        (payload) => {
-          console.log("Realtime parcels table update:", payload);
-          setParcel((prev: any) => ({ ...prev, ...payload.new }));
-          toast.success("Live tracking update received!");
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "parcel_events" },
-        () => {
-          refetchEvents(trackingCode).then(setEvents);
-          toast.info("Shipment timeline updated!");
-        }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setRealtimeActive(true);
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [parcel?.tracking_code]);
-
-  async function refetchEvents(trackingCode: string) {
-    if (!supabase) return events;
-    const { data } = await supabase
-      .from("parcel_events")
-      .select("status, location, note, created_at, parcels!inner(tracking_code)")
-      .eq("parcels.tracking_code", trackingCode)
-      .order("created_at", { ascending: true });
-    return data || [];
-  }
+  const events = (result?.events ?? []).map((ev) => ({
+    status: ev.status,
+    location: ev.location,
+    note: ev.note,
+    created_at: ev.createdAt,
+  }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    trackParcelByCode(code);
+    if (!code.trim()) return;
+    setActiveCode(code.trim().toUpperCase());
   };
+
+  const refresh = () => utils.parcels.track.invalidate({ code: activeCode });
 
   const handleStaffLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!parcel?.tracking_code) return;
+    try {
+      await logEvent.mutateAsync({
+        code: parcel.tracking_code,
+        status: staffStatus,
+        location: staffLocation,
+        note: staffNote,
+      });
+      toast.success(`Logged ${staffStatus.replace(/_/g, " ")} for ${parcel.tracking_code}`);
+      await refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not log event.");
+    }
+  };
 
-    setLoading(true);
-    await logParcelEvent({
-      trackingCode: parcel.tracking_code,
-      status: staffStatus,
-      location: staffLocation,
-      note: staffNote,
-      staffUserId: "staff-admin-demo",
-    });
-    toast.success(`Logged ${staffStatus.replace(/_/g, " ")} for ${parcel.tracking_code}`);
-    await trackParcelByCode(parcel.tracking_code);
-    setLoading(false);
+  const handleConfirm = async (role: "sender" | "receiver") => {
+    if (!parcel?.tracking_code) return;
+    try {
+      await confirmHandover.mutateAsync({ code: parcel.tracking_code, role });
+      toast.success(
+        role === "receiver"
+          ? "Delivery confirmed by receiver! Sender confirmation still pending."
+          : "Sender confirmation recorded! Waiting for receiver confirmation.",
+      );
+      await refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Confirmation failed.");
+    }
   };
 
   const currentStepIndex = parcel
     ? STATUS_STEPS.findIndex((s) => s.key === parcel.status)
     : -1;
+
+  const notFound = activeCode.trim().length >= 3 && !trackQuery.isFetching && trackQuery.data === null;
 
   return (
     <div className="mx-auto max-w-md space-y-4">
@@ -185,9 +119,9 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
         </button>
       </form>
 
-      {error && (
+      {notFound && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs font-extrabold text-destructive text-center">
-          {error}
+          No parcel found with that tracking code.
         </div>
       )}
 
@@ -218,22 +152,16 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
               <p className="text-xs font-extrabold text-primary">
                 {parcel.origin_office} → {parcel.destination_office}
               </p>
-              <p className="text-[11px] font-extrabold text-accent">Fare: N${parcel.price || 130}</p>
+              <p className="text-[11px] font-extrabold text-accent">Fare: N${parcel.price}</p>
             </div>
           </div>
 
-          {realtimeActive && (
-            <div className="flex items-center gap-2 rounded-xl bg-success/15 px-3 py-1.5 text-xs font-extrabold text-success">
-              <Radio className="h-3.5 w-3.5 animate-pulse" /> Connected to Coach
-            </div>
-          )}
-
           {/* Landed / Arrived Notification Banner */}
           {(parcel.status === "arrived" || parcel.status === "ready_for_collection" || parcel.status === "collected") && (
-            <div className="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/15 p-3.5 text-xs font-extrabold text-primary animate-bounce">
+            <div className="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/15 p-3.5 text-xs font-extrabold text-primary">
               <Bell className="h-5 w-5 shrink-0 text-success animate-pulse" />
               <div>
-                <span className="text-success block text-xs">📦 Notification: Parcel Has Landed!</span>
+                <span className="text-success block text-xs">Notification: Parcel Has Landed!</span>
                 <span className="text-[11px] font-semibold text-muted-foreground block mt-0.5 leading-tight">
                   Coach arrived at {parcel.destination_office} Terminal. Ready for receiver collection and confirmation.
                 </span>
@@ -271,12 +199,12 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
 
           {/* Status Stepper */}
           <div className="space-y-1 pt-1">
-            {STATUS_STEPS.map((step, i) => {
+            {STATUS_STEPS.map((stepItem, i) => {
               const done = i <= currentStepIndex;
               const isLast = i === STATUS_STEPS.length - 1;
-              const isCurrent = step.key === parcel.status;
+              const isCurrent = stepItem.key === parcel.status;
               return (
-                <div key={step.key} className="relative flex gap-3.5 pb-4 last:pb-0">
+                <div key={stepItem.key} className="relative flex gap-3.5 pb-4 last:pb-0">
                   {!isLast && (
                     <div
                       className={`absolute left-[11px] top-6 bottom-0 w-[2px] ${
@@ -301,7 +229,7 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
                         done ? "text-primary" : "text-muted-foreground"
                       }`}
                     >
-                      {step.label}
+                      {stepItem.label}
                     </p>
                     {isCurrent && parcel.current_location && (
                       <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-accent">
@@ -329,27 +257,8 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
             <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
-                disabled={parcel.receiverConfirmed}
-                onClick={async () => {
-                  const updated = await confirmParcelHandover({
-                    trackingCode: parcel.tracking_code,
-                    party: "receiver",
-                  });
-                  if (updated) {
-                    setParcel((prev: any) => ({
-                      ...prev,
-                      receiverConfirmed: updated.receiverConfirmed,
-                      senderConfirmed: updated.senderConfirmed,
-                      status: updated.status,
-                    }));
-                    toast.success(
-                      updated.status === "expired"
-                        ? "Delivery mutually confirmed! Link is now expired."
-                        : "Receiver confirmation recorded! Waiting for sender confirmation."
-                    );
-                    trackParcelByCode(parcel.tracking_code);
-                  }
-                }}
+                disabled={parcel.receiverConfirmed || loading}
+                onClick={() => handleConfirm("receiver")}
                 className={`flex h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-extrabold transition-all active:scale-95 ${
                   parcel.receiverConfirmed
                     ? "bg-success/20 text-success border border-success/30 cursor-default"
@@ -357,32 +266,12 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
                 }`}
               >
                 <Check className="h-4 w-4 shrink-0" />
-                <span>{parcel.receiverConfirmed ? "Receiver Confirmed" : "Receiver: Confirm Receipt"}</span>
+                <span>{parcel.receiverConfirmed ? "Receiver Confirmed" : "Receiver: Confirm"}</span>
               </button>
-
               <button
                 type="button"
-                disabled={parcel.senderConfirmed}
-                onClick={async () => {
-                  const updated = await confirmParcelHandover({
-                    trackingCode: parcel.tracking_code,
-                    party: "sender",
-                  });
-                  if (updated) {
-                    setParcel((prev: any) => ({
-                      ...prev,
-                      receiverConfirmed: updated.receiverConfirmed,
-                      senderConfirmed: updated.senderConfirmed,
-                      status: updated.status,
-                    }));
-                    toast.success(
-                      updated.status === "expired"
-                        ? "Delivery mutually confirmed! Link is now expired."
-                        : "Sender confirmation recorded! Waiting for receiver confirmation."
-                    );
-                    trackParcelByCode(parcel.tracking_code);
-                  }
-                }}
+                disabled={parcel.senderConfirmed || loading}
+                onClick={() => handleConfirm("sender")}
                 className={`flex h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-extrabold transition-all active:scale-95 ${
                   parcel.senderConfirmed
                     ? "bg-success/20 text-success border border-success/30 cursor-default"
@@ -390,10 +279,60 @@ export function ParcelTracker({ initialCode = "CP-2026-8842" }: { initialCode?: 
                 }`}
               >
                 <Check className="h-4 w-4 shrink-0" />
-                <span>{parcel.senderConfirmed ? "Sender Confirmed" : "Sender: Confirm Handover"}</span>
+                <span>{parcel.senderConfirmed ? "Sender Confirmed" : "Sender: Confirm"}</span>
               </button>
             </div>
           </div>
+
+          {/* Staff quick actions (owner only) */}
+          {parcel.isOwner && (
+            <div className="rounded-2xl border border-border bg-secondary/30 p-3.5">
+              <button
+                type="button"
+                onClick={() => setShowStaffActions((v) => !v)}
+                className="flex w-full items-center justify-between text-xs font-extrabold text-primary"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Package className="h-4 w-4 text-accent" /> Depot status update
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground">{showStaffActions ? "Hide" : "Show"}</span>
+              </button>
+              {showStaffActions && (
+                <form onSubmit={handleStaffLog} className="mt-3 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={staffStatus}
+                      onChange={(e) => setStaffStatus(e.target.value as ParcelStatus)}
+                      className="h-11 rounded-xl border border-border bg-input px-3 text-xs font-bold outline-none focus:border-accent"
+                    >
+                      {STATUS_STEPS.map((s) => (
+                        <option key={s.key} value={s.key}>{s.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={staffLocation}
+                      onChange={(e) => setStaffLocation(e.target.value)}
+                      placeholder="Location"
+                      className="h-11 rounded-xl border border-border bg-input px-3 text-xs font-bold outline-none focus:border-accent"
+                    />
+                  </div>
+                  <input
+                    value={staffNote}
+                    onChange={(e) => setStaffNote(e.target.value)}
+                    placeholder="Note"
+                    className="h-11 w-full rounded-xl border border-border bg-input px-3 text-xs font-bold outline-none focus:border-accent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="h-11 w-full rounded-xl bg-accent text-xs font-extrabold text-accent-foreground active:scale-95 disabled:opacity-50 transition-transform"
+                  >
+                    Log Status Update
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           {/* Event History */}
           <div className="border-t border-border pt-4">

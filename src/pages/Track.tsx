@@ -4,6 +4,7 @@ import { CarTaxiFront, CheckCircle2, Clock, Compass, MapPin, MessageSquare, Navi
 import { TopBar } from "@/components/TopBar";
 import { TransferIsland } from "@/components/TransferIsland";
 import { toast } from "sonner";
+import { trpc } from "@/providers/trpc";
 
 const statuses = [
   "Booking Confirmed",
@@ -16,14 +17,37 @@ const statuses = [
   "Completed",
 ];
 
+function statusToStep(status: string): number {
+  switch (status) {
+    case "confirmed":
+      return 0;
+    case "dispatched":
+      return 2;
+    case "completed":
+      return 7;
+    case "cancelled":
+      return 0;
+    default:
+      return 0;
+  }
+}
+
 export const Track = () => {
   const [params, setParams] = useSearchParams();
-  const [query, setQuery] = useState(params.get("id") || "WCC-2407");
-  const [step, setStep] = useState(2);
+  const [query, setQuery] = useState(params.get("id") || "");
+  const activeRef = (params.get("id") || "").trim().toUpperCase();
+
+  const trackQuery = trpc.bookings.trackByReference.useQuery(
+    { reference: activeRef },
+    { enabled: activeRef.length >= 3, retry: false },
+  );
+  const booking = trackQuery.data ?? null;
+  const step = booking ? statusToStep(booking.status) : 0;
 
   const search = (e: React.FormEvent) => {
     e.preventDefault();
     const upper = query.trim().toUpperCase();
+    if (!upper) return;
     setParams({ id: upper });
     toast.success(`Loading transfer ${upper}`);
   };
@@ -38,34 +62,36 @@ export const Track = () => {
         <section className="relative overflow-hidden rounded-3xl border border-border bg-primary p-5 text-primary-foreground shadow-[var(--shadow-elegant)]">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 rounded-full bg-success ring-2 ring-white/30 animate-ping" />
+              <span className={`flex h-3 w-3 rounded-full ring-2 ring-white/30 ${booking ? "bg-success animate-ping" : "bg-white/30"}`} />
               <span className="text-xs font-extrabold uppercase tracking-wider text-white/90">
-                Driver Assigned
+                {booking ? statuses[step] : "Enter a reference"}
               </span>
             </div>
-            <span className="flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-0.5 text-[10px] font-extrabold text-success border border-success/30">
-              <Radio className="h-3 w-3 animate-pulse" /> Connected
-            </span>
+            {booking && booking.status !== "cancelled" && (
+              <span className="flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-0.5 text-[10px] font-extrabold text-success border border-success/30">
+                <Radio className="h-3 w-3 animate-pulse" /> Connected
+              </span>
+            )}
           </div>
 
           <div className="my-5 space-y-4">
             <div className="flex items-center justify-between text-xs font-bold text-white/80">
               <span>Pickup</span>
-              <span className="text-accent font-extrabold">Private Transfer</span>
+              <span className="text-accent font-extrabold">{booking?.service ?? "Private Transfer"}</span>
               <span>Destination</span>
             </div>
 
             <div className="relative h-3 w-full rounded-full bg-white/15 overflow-hidden">
-              <div className="h-full bg-accent transition-all duration-1000 rounded-full shadow-[0_0_12px_hsl(var(--accent))]" style={{ width: `${Math.min(100, step * 12)}%` }} />
+              <div className="h-full bg-accent transition-all duration-1000 rounded-full shadow-[0_0_12px_hsl(var(--accent))]" style={{ width: `${booking ? Math.min(100, Math.max(8, step * 13)) : 0}%` }} />
             </div>
 
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-2">
                 <Navigation className="h-4 w-4 text-accent animate-spin" style={{ animationDuration: "12s" }} />
-                <span className="text-xs font-extrabold">ETA 24 min</span>
+                <span className="text-xs font-extrabold">{booking ? `${booking.travelDate} · ${booking.pickupTime}` : "Awaiting reference"}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-success">
-                <ShieldCheck className="h-4 w-4" /> City Cab verified
+                <ShieldCheck className="h-4 w-4" /> City Link verified
               </div>
             </div>
           </div>
@@ -75,75 +101,87 @@ export const Track = () => {
           <form onSubmit={search} className="flex gap-2 pb-2 border-b border-border">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input value={query} onChange={(e) => setQuery(e.target.value.toUpperCase())} placeholder="Enter transfer ref" className="h-12 w-full rounded-xl border border-border bg-input pl-10 pr-3 text-xs font-extrabold uppercase outline-none focus:border-accent" />
+              <input value={query} onChange={(e) => setQuery(e.target.value.toUpperCase())} placeholder="Enter transfer ref (e.g. CL-2601-4821)" className="h-12 w-full rounded-xl border border-border bg-input pl-10 pr-3 text-xs font-extrabold uppercase outline-none focus:border-accent" />
             </div>
             <button type="submit" className="h-12 rounded-xl bg-accent px-5 text-xs font-extrabold text-accent-foreground shadow-[var(--shadow-glow)] active:scale-95 transition-transform">
               Track
             </button>
           </form>
 
-          <div className="flex items-start justify-between border-b border-border pb-3">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase text-muted-foreground">Transfer Reference</span>
-              <h3 className="text-xl font-extrabold text-primary mt-0.5">{query}</h3>
-              <p className="text-xs font-semibold text-muted-foreground">HKIA Arrivals Hall to Windhoek West</p>
+          {trackQuery.isFetching && (
+            <p className="text-center text-xs font-bold text-muted-foreground">Locating transfer…</p>
+          )}
+
+          {activeRef.length >= 3 && !trackQuery.isFetching && !booking && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs font-extrabold text-destructive">
+              No transfer found with reference {activeRef}. Check the code on your confirmation and try again.
             </div>
-            <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-extrabold text-success">
-              {statuses[step]}
-            </span>
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <Info icon={<Compass className="h-3.5 w-3.5 text-accent" />} label="Driver">
-              Johannes Mwafangeyo
-            </Info>
-            <Info icon={<Clock className="h-3.5 w-3.5 text-accent" />} label="Vehicle">
-              Toyota Fortuner · N 123-456 W
-            </Info>
-          </div>
-
-          <div className="space-y-2">
-            {statuses.slice(0, 7).map((status, index) => (
-              <button
-                type="button"
-                key={status}
-                onClick={() => setStep(index)}
-                className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
-                  index <= step ? "border-accent/30 bg-accent/10" : "border-border bg-secondary/30"
-                }`}
-              >
-                <span className={`flex h-7 w-7 items-center justify-center rounded-full ${index <= step ? "bg-accent text-accent-foreground" : "bg-card text-muted-foreground"}`}>
-                  <CheckCircle2 className="h-4 w-4" />
+          {booking && (
+            <>
+              <div className="flex items-start justify-between border-b border-border pb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground">Transfer Reference</span>
+                  <h3 className="text-xl font-extrabold text-primary mt-0.5">{booking.reference}</h3>
+                  <p className="text-xs font-semibold text-muted-foreground">{booking.fromLocation} to {booking.toLocation}</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${booking.status === "cancelled" ? "bg-destructive/15 text-destructive" : "bg-success/15 text-success"}`}>
+                  {booking.status === "cancelled" ? "Cancelled" : statuses[step]}
                 </span>
-                <span className="text-xs font-extrabold text-primary">{status}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-extrabold uppercase text-muted-foreground">Assigned Driver</p>
-                <p className="text-sm font-extrabold text-primary">Johannes Mwafangeyo</p>
-                <p className="text-xs font-semibold text-muted-foreground">SUV · Toyota Fortuner · N 123-456 W</p>
               </div>
-              <CarTaxiFront className="h-8 w-8 text-accent" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <a href="tel:+264812572188" className="flex h-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm active:scale-95">
-                <PhoneCall className="h-4 w-4" />
-              </a>
-              <a href="https://wa.me/264812572188" target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center rounded-xl bg-success/20 text-success shadow-sm active:scale-95">
-                <MessageSquare className="h-4 w-4" />
-              </a>
-              <a href="https://wa.me/264812572188" target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center rounded-xl bg-secondary text-xs font-extrabold text-primary shadow-sm active:scale-95">
-                Help
-              </a>
-            </div>
-            <p className="text-[11px] font-semibold text-muted-foreground border-t border-border pt-2 flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-accent" /> Live location appears only when driver data is available.
-            </p>
-          </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Info icon={<Compass className="h-3.5 w-3.5 text-accent" />} label="Driver">
+                  {booking.driverName ?? "Assignment pending"}
+                </Info>
+                <Info icon={<Clock className="h-3.5 w-3.5 text-accent" />} label="Vehicle">
+                  {booking.driverVehicle ?? booking.vehicle}
+                </Info>
+              </div>
+
+              <div className="space-y-2">
+                {statuses.slice(0, 7).map((status, index) => (
+                  <div
+                    key={status}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
+                      index <= step ? "border-accent/30 bg-accent/10" : "border-border bg-secondary/30"
+                    }`}
+                  >
+                    <span className={`flex h-7 w-7 items-center justify-center rounded-full ${index <= step ? "bg-accent text-accent-foreground" : "bg-card text-muted-foreground"}`}>
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
+                    <span className="text-xs font-extrabold text-primary">{status}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase text-muted-foreground">Assigned Driver</p>
+                    <p className="text-sm font-extrabold text-primary">{booking.driverName ?? "Driver assignment pending"}</p>
+                    <p className="text-xs font-semibold text-muted-foreground">{booking.driverVehicle ?? booking.vehicle}</p>
+                  </div>
+                  <CarTaxiFront className="h-8 w-8 text-accent" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <a href={`tel:${booking.driverPhone ?? "+264812572188"}`} className="flex h-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm active:scale-95">
+                    <PhoneCall className="h-4 w-4" />
+                  </a>
+                  <a href={`https://wa.me/${(booking.driverPhone ?? "+264812572188").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center rounded-xl bg-success/20 text-success shadow-sm active:scale-95">
+                    <MessageSquare className="h-4 w-4" />
+                  </a>
+                  <a href="https://wa.me/264812572188" target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center rounded-xl bg-secondary text-xs font-extrabold text-primary shadow-sm active:scale-95">
+                    Help
+                  </a>
+                </div>
+                <p className="text-[11px] font-semibold text-muted-foreground border-t border-border pt-2 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-accent" /> Live location appears only when driver data is available.
+                </p>
+              </div>
+            </>
+          )}
         </section>
       </main>
     </div>

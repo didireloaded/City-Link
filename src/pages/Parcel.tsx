@@ -1,7 +1,7 @@
 import { bookingLink } from "@/lib/transfer-service";
 import { Link } from "react-router-dom";
 import { SERVICES, CITY_LINK_INFO } from "@/data/trips";
-import { ArrowRight, BriefcaseBusiness, CarTaxiFront, MessageCircle, Phone, Plane, User } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CarTaxiFront, MessageCircle, PackageSearch, Phone, Plane, User } from "lucide-react";
 
 const serviceIcons = [Plane, CarTaxiFront, BriefcaseBusiness, CarTaxiFront, BriefcaseBusiness, User];
 
@@ -25,6 +25,19 @@ const Parcel = () => {
             Airport, city, lodge, safari, executive and staff transportation with professional drivers.
           </p>
         </section>
+
+        <Link to="/parcels/track" className="mt-5 flex items-center justify-between rounded-2xl border border-accent/40 bg-accent/10 p-4 shadow-sm active:scale-[0.99] transition-transform">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/20 text-accent">
+              <PackageSearch className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="text-sm font-extrabold text-primary">Parcel Send & Track</h3>
+              <p className="text-xs font-semibold text-muted-foreground">Live waybill tracking on the B1 corridor</p>
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-accent" />
+        </Link>
 
         <section className="mt-5 grid grid-cols-2 gap-3">
           {SERVICES.map((service, index) => {

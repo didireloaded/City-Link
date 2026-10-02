@@ -6,7 +6,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   tripLabel?: string;
-  onSubmit?: (data: { driver: number; service: number; comment: string }) => void;
+  onSubmit?: (data: { driver: number; service: number; comment: string }) => void | Promise<void>;
 }
 
 export const RatingModal = ({ open, onClose, tripLabel, onSubmit }: Props) => {
@@ -21,15 +21,10 @@ export const RatingModal = ({ open, onClose, tripLabel, onSubmit }: Props) => {
       toast.error("Please rate both driver and service");
       return;
     }
-    onSubmit?.({ driver, service, comment });
-    const reviews = JSON.parse(localStorage.getItem("citylink_reviews") || "[]");
-    reviews.unshift({ id: Date.now(), trip: tripLabel, driver, service, comment, at: new Date().toISOString() });
-    localStorage.setItem("citylink_reviews", JSON.stringify(reviews));
-    toast.success("Thanks for your feedback");
+    void onSubmit?.({ driver, service, comment });
     setDriver(0);
     setService(0);
     setComment("");
-    onClose();
   };
 
   return (

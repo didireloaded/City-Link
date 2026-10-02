@@ -19,7 +19,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { toast } from "sonner";
-import { loadProfile, saveProfile } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
 
 interface PaymentGatewayModalProps {
   open: boolean;
@@ -44,11 +44,10 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [pushStep, setPushStep] = useState<number>(0); // 0=idle, 1=push sent, 2=confirmed
   const [eftRef] = useState(() => `CL-EFT-${Math.floor(10000 + Math.random() * 90000)}`);
-  const [profile, setProfile] = useState(() => loadProfile());
+  const { profile } = useProfile();
 
   useEffect(() => {
     if (open) {
-      setProfile(loadProfile());
       setIsProcessing(false);
       setPushStep(0);
     }
@@ -68,8 +67,6 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
       }
       setIsProcessing(true);
       setTimeout(() => {
-        const updated = { ...profile, walletBalanceNAD: balance - amountNAD };
-        saveProfile(updated);
         setIsProcessing(false);
         toast.success(`Paid N$${amountNAD} using Store Credit Wallet!`);
         onSuccess("Store Credit Wallet", `CL-WAL-${Date.now().toString().slice(-6)}`);
